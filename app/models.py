@@ -14,7 +14,7 @@ class User(db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
 
 
-    def __init__(self, username):
+    def __init__(self, username, password):
         self.username = username
         self.password = password
 
@@ -42,16 +42,17 @@ class User(db.Model):
     def is_active(self):
         return True
 
+    @property
     def is_anonymous(self):
         return False
 
     def get_id(self):
-        TODO
+        return str(self.id)
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return User.query.get(int(user_id))
 
 
 """

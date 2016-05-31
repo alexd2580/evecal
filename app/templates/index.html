@@ -4,17 +4,22 @@
 {% block content %}
 <h1>Main Hub</h1>
 
+<h2>{{user}}</h2>
+
 <p><form action="/register" method="get">
-    <input type="submit" value="Go to register" name="Register" id="i_reg_submit" />
+    <input type="submit" value="Go to register" id="i_register" />
 </form></p>
 <p><form action="/add_entry" method="get">
-    <input type="submit" value="Add calendar entry" name="Add Entry" id="i_add_entry" />
+    <input type="submit" value="Add calendar entry" id="i_add_entry" />
 </form></p>
 <p><form action="/login" method="get">
-    <input type="submit" value="Go to login" name="Login" id="i_login" />
+    <input type="submit" value="Go to login" id="i_login" />
 </form></p>
 <p><form action="/list_all" method="get">
-    <input type="submit" value="List all entries" name="List Entries" id="i_list_entries" />
+    <input type="submit" value="List all entries" id="i_list_entries" />
+</form></p>
+<p><form action="/logout" method="get">
+    <input type="submit" value="Logout" id="i_logout" />
 </form></p>
 
 {% endblock %}

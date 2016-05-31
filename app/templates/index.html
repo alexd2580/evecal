@@ -1,0 +1,20 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Main Hub</h1>
+
+<p><form action="/register" method="get">
+    <input type="submit" value="Go to register" name="Register" id="i_reg_submit" />
+</form></p>
+<p><form action="/add_entry" method="get">
+    <input type="submit" value="Add calendar entry" name="Add Entry" id="i_add_entry" />
+</form></p>
+<p><form action="/login" method="get">
+    <input type="submit" value="Go to login" name="Login" id="i_login" />
+</form></p>
+<p><form action="/list_all" method="get">
+    <input type="submit" value="List all entries" name="List Entries" id="i_list_entries" />
+</form></p>
+
+{% endblock %}

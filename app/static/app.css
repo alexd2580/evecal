@@ -1,0 +1,55 @@
+/* app css stylesheet */
+
+body {
+    padding-top: 50px;
+    color: #fff;
+    background: none;
+    font-family: 'Open Sans', Arial, Helvetica, Sans-Serif;
+}
+.full {
+    background: url('/static/background.png') no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    background-size: cover;
+    -o-background-size: cover;
+}
+input, select, textarea {
+    color: #fff;
+    background-color: #333;
+    font-family: 'Open Sans', Arial, Helvetica, Sans-Serif;
+}
+
+.dp {
+    color: #333;
+    background-color: #fff;
+}
+
+.jumbotron {
+    height: 150px;
+    background: transparent;
+}
+
+.jumbotron h1 {
+    color: black;
+}
+
+.glowtext {
+    color: black;
+    text-shadow: 0em 0em 1em #FFFFFF, 0em 0em 1em #FFFFFF;
+}
+
+.well {
+    margin-top: 10px;
+    margin-bottom: 0px;
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.text_in_well {
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+.custom_centered {
+    text-align: center;
+}

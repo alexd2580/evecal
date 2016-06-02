@@ -1,5 +1,5 @@
 all:
-	pyvenv venv ;\
+	pyvenv venv
 	venv/bin/pip install -r requirements.txt
 
 clean:

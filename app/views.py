@@ -9,6 +9,9 @@ from . import app, db
 from .models import User
 from .forms import *
 
+from datetime import date, datetime, timedelta
+from calendar import Calendar
+
 print('Processing views.py')
 
 valid_paths = ['/', '/index', '/login', '/logout', '/register']
@@ -85,7 +88,100 @@ def register_route():
             return redirect(url_for('login_route'))
     return render_template('register.html', title='Register', form=form)
 
+# get_month_and_events :: [Week [Day Name Date [Event ID Name]]]
+def get_month_and_events(year, month):
+
+
+    def per_day(day):
+        return (day.strftime('%A'), day)
+
+    def per_week(week):
+        return [per_day(d) for d in week]
+
+    def per_month(month):
+        return [per_week(w) for w in month]
+
+    cal = Calendar(0) # default replace by user db?
+    the_month = cal.monthdatescalendar(year, month)
+    the_month = per_month(the_month)
+
+    return the_month
+
+
+
+@app.route('/calendar', methods=['GET'])
+def calendar_route():
+    now = date.today()
+    year = request.args.get('year') or now.year
+    month = request.args.get('month') or now.month
+    day = request.args.get('day')
+
+    month_and_events = get_month_and_events(year, month)
+
+    at_month = date(2016, month, 1)
+    month_name = at_month.strftime("%B")
+
+    if day is None:
+        return render_template(
+            'calendar.html',
+            title='Calendar',
+            year=year,
+            month=month,
+            month_name=month_name,
+            month_and_events=month_and_events)
+
+    return ""
+"""
+    return render_template(
+                'calendar.html',
+                title='Calendar',
+                year=year,
+                month=month,
+                day=day,
+                month_to_name=month_to_name,
+                date_to_weeks=date_to_weeks,
+                week_to_days=week_to_days)
+"""
 @app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):
     flash('Invalid path: {}'.format(other))
     return redirect(url_for('index_route'))
+
+
+"""
+# Returns the localized month name
+# Assuming date(2016, month, 1) returns the first day of month=month
+def month_to_name(month):
+    at_month = date(2016, month, 1)
+    return at_month.strftime("%B")
+
+# Returns a list of weeks where each week contains a list of days
+# Hardcoding Monday to be the first day of the week
+def date_to_weeks(year, month):
+    start_date = date(year, month, 1)
+    day_of_week = start_date.weekday()
+    one_day = timedelta(1)
+    start_date -= day_of_week * one_day
+
+    weeks = []
+    while start_date.month <= month:
+        week = []
+        for i in range(0,7):
+            week.append(start_date.strftime("%A"))
+            start_date += one_day
+        weeks.append(week)
+
+    return weeks
+
+# Can be performed once! TODO
+# Returns a list of localized weekday names
+# Hardcoding Monday to be the first day of the week
+def week_to_days():
+    now = date.today()
+    one_day = timedelta(1)
+    monday = now - now.weekday() * one_day
+    weekdays = []
+    for i in range(0,7):
+        weekdays.append((monday + timedelta(i)).strftime("%A"))
+    return weekdays
+"""

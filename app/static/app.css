@@ -45,9 +45,9 @@ input, select, textarea {
     background: rgba(0, 0, 0, 0.5);
 }
 
-.text_in_well {
-    padding-left: 50px;
-    padding-right: 50px;
+.datecolumn {
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .custom_centered {

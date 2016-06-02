@@ -32,6 +32,18 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="email" class="control-label col-xs-3">
+                        E-mail
+                    </label>
+                    <div class="col-xs-5">
+                        {{ form.email(size=30) }}
+                    </div>
+                    {% for error in form.email.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}<br>
+                </div>
+
+                <div class="form-group">
                     <label for="password" class="control-label col-xs-3">
                         Password
                     </label>

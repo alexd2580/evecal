@@ -9,6 +9,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True)
+    email = db.Column(db.String(80), unique=True)
     password_hash = db.Column(db.String(128))
     registration_date = db.Column(db.DateTime(), default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
@@ -53,6 +54,23 @@ class User(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+class Event(db.Model):
+    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key=True)
+    event_date = db.Column(db.DateTime())
+    name = db.Column(db.String(80))
+    description = db.Column(db.Text)
+    creator = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def __init__(self, event_date, name, description, user):
+        self.event_date = event_date
+        self.name = name
+        self.description = description
+        self.creator = user.id
+
+    def __repr__(self):
+        return '<Event {}: {}>'.format(self.id, self.name, self.event_date)
 
 
 """

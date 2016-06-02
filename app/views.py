@@ -6,7 +6,7 @@ from flask import \
 from flask_login import login_required, current_user, login_user, logout_user
 
 from . import app, db
-from .models import User
+from .models import User, Event
 from .forms import *
 
 from datetime import date, datetime, timedelta
@@ -88,9 +88,26 @@ def register_route():
             return redirect(url_for('login_route'))
     return render_template('register.html', title='Register', form=form)
 
+# Returns the date of the first day of the next month
+def get_next_month(this_month):
+    # increasing the date by 40 days should
+    m = ((this_month.month + 1) % 13) + 1
+    y = this_month.year
+    if m == 1:
+        y += 1
+    return date(y, m, 1)
+
 # get_month_and_events :: [Week [Day Name Date [Event ID Name]]]
 def get_month_and_events(year, month):
+    cal = Calendar(0) # default replace by user db?
+    the_month = cal.monthdatescalendar(year, month)
 
+    begin = the_month[0][0]
+    end = the_month[-1][-1]
+    events = Event.query.filter(
+        Event.event_date > begin.strftime('%Y-%m-%d'),
+        Event.event_date < end.strftime('%Y-%m-%d'))
+    print(events)
 
     def per_day(day):
         return (day.strftime('%A'), day)
@@ -101,47 +118,49 @@ def get_month_and_events(year, month):
     def per_month(month):
         return [per_week(w) for w in month]
 
-    cal = Calendar(0) # default replace by user db?
-    the_month = cal.monthdatescalendar(year, month)
-    the_month = per_month(the_month)
+    return per_month(the_month)
 
-    return the_month
-
-
+# get_day_and_events :: [Event ID Name]
+def get_day_and_events(year, month, day):
+    today = date(year,month,day)
+    tomorrow = today + timedelta(days=1)
+    events = Event.query.filter(
+        Event.event_date > today.strftime('%Y-%m-%d'),
+        Event.event_date < tomorrow.strftime('%Y-%m-%d')).all()
+    return events
 
 @app.route('/calendar', methods=['GET'])
 def calendar_route():
     now = date.today()
-    year = request.args.get('year') or now.year
-    month = request.args.get('month') or now.month
+    year = int(request.args.get('year') or now.year)
+    month = int(request.args.get('month') or now.month)
     day = request.args.get('day')
-
-    month_and_events = get_month_and_events(year, month)
+    if day is not None:
+        day = int(day)
 
     at_month = date(2016, month, 1)
     month_name = at_month.strftime("%B")
 
     if day is None:
+        month_and_events = get_month_and_events(year, month)
         return render_template(
-            'calendar.html',
+            'calendar_month.html',
             title='Calendar',
             year=year,
             month=month,
             month_name=month_name,
             month_and_events=month_and_events)
 
-    return ""
-"""
+    day_and_events = get_day_and_events(year, month, day)
     return render_template(
-                'calendar.html',
-                title='Calendar',
-                year=year,
-                month=month,
-                day=day,
-                month_to_name=month_to_name,
-                date_to_weeks=date_to_weeks,
-                week_to_days=week_to_days)
-"""
+        'calendar_day.html',
+        title='Calendar',
+        year=year,
+        month=month,
+        day=day,
+        month_name=month_name,
+        day_and_events=day_and_events)
+
 @app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):
     flash('Invalid path: {}'.format(other))

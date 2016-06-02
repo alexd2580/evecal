@@ -1,0 +1,41 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-full">
+
+    <div class="container jumbotron">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="page-header">
+                    <h2 class="glowtext">
+                        Calendar/{{month_name}}
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-stripped table-responsive">
+        <thead>
+            {% for day,_ in month_and_events[0] %}
+                <th>{{day}}</th>
+            {% endfor %}
+        </thead>
+        <tbody>
+            {% for week in month_and_events %}
+            <tr>
+                {% for _,day in week %}
+                <td><a href="?year={{year}}&month={{month}}&day={{day.day}}">
+                    {{day.strftime('%Y-%m-%d')}}
+                </a></td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

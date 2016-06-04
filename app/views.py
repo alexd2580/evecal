@@ -6,11 +6,12 @@ from flask import \
 from flask_login import login_required, current_user, login_user, logout_user
 
 from . import app, db
-from .models import User, Event
+from .models import *
 from .forms import *
 
 from datetime import date, datetime, timedelta
 from calendar import Calendar
+from urllib.parse import quote
 
 print('Processing views.py')
 
@@ -129,14 +130,30 @@ def get_day_and_events(year, month, day):
         Event.event_date < tomorrow.strftime('%Y-%m-%d')).all()
     return events
 
-@app.route('/calendar', methods=['GET'])
+@app.route('/calendar', methods=['GET','POST'])
 def calendar_route():
+    unsubscribe = request.form.get('unsubscribe')
+    if unsubscribe is not None:
+        s = Subscription.query\
+            .filter(Subscription.event_id == int(unsubscribe))\
+            .filter(Subscription.user_id == current_user.id).one()
+
+        db.session.delete(s)
+        db.session.commit()
+
+        flash('Unsubscribed from event')
+
+    subscribe = request.form.get('subscribe')
+    if subscribe is not None:
+        s = Subscription(current_user.id, int(subscribe))
+        db.session.add(s)
+        db.session.commit()
+        flash('Subscribed to event')
+
     now = date.today()
     year = int(request.args.get('year') or now.year)
     month = int(request.args.get('month') or now.month)
     day = request.args.get('day')
-    if day is not None:
-        day = int(day)
 
     at_month = date(2016, month, 1)
     month_name = at_month.strftime("%B")
@@ -146,12 +163,12 @@ def calendar_route():
         return render_template(
             'calendar_month.html',
             title='Calendar',
-            year=year,
-            month=month,
             month_name=month_name,
             month_and_events=month_and_events)
 
+    day = int(day)
     day_and_events = get_day_and_events(year, month, day)
+    #day_and_events = [(e,e.creator) for e in day_and_events]
     return render_template(
         'calendar_day.html',
         title='Calendar',
@@ -159,7 +176,48 @@ def calendar_route():
         month=month,
         day=day,
         month_name=month_name,
+        this_url=quote(request.url),
         day_and_events=day_and_events)
+
+@app.route('/edit', methods=['GET', 'POST'])
+def edit_route():
+    next = request.args.get('next')
+    if next is None:
+        next = url_for('calendar_route')
+
+    form = EditForm()
+    if form.validate_on_submit():
+        id = request.form['eventid']
+        event = Event.query.filter(Event.id == int(id)).one()
+
+        event.name = request.form['eventname']
+        event.event_date = form.starttime.data # request.form['starttime']
+        # any reasons to use only one of the accessors?
+        event.eventdescr = request.form['eventdescr']
+        db.session.commit()
+
+        return redirect(next)
+
+    id = request.args.get('id')
+    if id is None:
+        return redirect(next)
+
+    event = Event.query.filter(Event.id == int(id)).one()
+
+    if event.creator_id != current_user.id:
+        flash('You cannot edit this event')
+        return redirect(next)
+
+    form.eventid.data = event.id
+    form.eventname.data = event.name
+    form.starttime.data = event.event_date
+    form.eventdescr.data = event.description
+
+    return render_template(
+        'edit_event.html',
+        title='Edit Event',
+        next=next,
+        form=form)
 
 @app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):

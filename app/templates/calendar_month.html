@@ -27,7 +27,7 @@
             {% for week in month_and_events %}
             <tr>
                 {% for _,day in week %}
-                <td><a href="?year={{year}}&month={{month}}&day={{day.day}}">
+                <td><a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
                     {{day.strftime('%Y-%m-%d')}}
                 </a></td>
                 {% endfor %}

@@ -10,6 +10,7 @@ from flask_bootstrap import Bootstrap
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../eventsandusers.db'
+app.config['SQLALCHEMY_ECHO'] = True
 app.config['SECRET_KEY'] = 'tanks for all ze zsh'
 app.config['WTF_CSRF_ENABLED'] = True
 

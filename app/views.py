@@ -134,21 +134,26 @@ def get_day_and_events(year, month, day):
 def calendar_route():
     unsubscribe = request.form.get('unsubscribe')
     if unsubscribe is not None:
-        s = Subscription.query\
+        xs = Subscription.query\
             .filter(Subscription.event_id == int(unsubscribe))\
-            .filter(Subscription.user_id == current_user.id).one()
+            .filter(Subscription.user_id == current_user.id).all()
 
-        db.session.delete(s)
+        for s in xs:
+            db.session.delete(s)
         db.session.commit()
 
         flash('Unsubscribed from event')
 
     subscribe = request.form.get('subscribe')
     if subscribe is not None:
-        s = Subscription(current_user.id, int(subscribe))
-        db.session.add(s)
-        db.session.commit()
-        flash('Subscribed to event')
+        xs = Subscription.query\
+            .filter(Subscription.event_id == int(subscribe))\
+            .filter(Subscription.user_id == current_user.id).all()
+        if len(xs) == 0:
+            s = Subscription(current_user.id, int(subscribe))
+            db.session.add(s)
+            db.session.commit()
+            flash('Subscribed to event')
 
     now = date.today()
     year = int(request.args.get('year') or now.year)

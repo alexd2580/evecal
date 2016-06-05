@@ -37,25 +37,27 @@
                 <td><p>{{event.creator.username}}</p></td>
 
                 <td>
-                {% if event.id in current_user.subscription_ids %}
-                    <form action="" method="post">
-                        <input type="hidden"  name="unsubscribe" value="{{event.id}}">
-                        <p>
-                            <button type="submit" class="btn btn-default btn-xs btn-error">
-                                <span class="glyphicon glyphicon-minus" aria-hidden="true"></span> Unsubscribe
-                            </button>
-                        </p>
-                    </form>
-                {% else %}
-                    <form action="" method="post">
-                        <input type="hidden"  name="subscribe" value="{{event.id}}">
-                        <p>
-                            <button type="submit" class="btn btn-default btn-xs btn-success">
-                                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Subscribe
-                            </button>
-                        </p>
-                    </form>
-                {% endif %}
+                    {% if not current_user.is_anonymous %}
+                        {% if event.id in current_user.subscription_ids %}
+                            <form action="" method="post">
+                                <input type="hidden"  name="unsubscribe" value="{{event.id}}">
+                                <p>
+                                    <button type="submit" class="btn btn-default btn-xs btn-error">
+                                        <span class="glyphicon glyphicon-minus" aria-hidden="true"></span> Unsubscribe
+                                    </button>
+                                </p>
+                            </form>
+                        {% else %}
+                            <form action="" method="post">
+                                <input type="hidden"  name="subscribe" value="{{event.id}}">
+                                <p>
+                                    <button type="submit" class="btn btn-default btn-xs btn-success">
+                                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Subscribe
+                                    </button>
+                                </p>
+                            </form>
+                        {% endif %}
+                    {% endif %}
                 </td>
 
                 <td>

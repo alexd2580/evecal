@@ -24,7 +24,7 @@ class User(db.Model):
     # The events a user has subscribed to
     subscriptions = db.relationship('Subscription', back_populates='user', lazy='joined')
     @property
-    def subscription_ids(self):
+    def subscription_ids(self): #polyorm rewrite
         return [ s.event.id for s in self.subscriptions ]
 
 
@@ -86,11 +86,11 @@ class Event(db.Model):
     # All the users which have subscribed to this event
     subscriptions = db.relationship('Subscription', back_populates='event', lazy='joined')
 
-    def __init__(self, event_date, name, description, user):
+    def __init__(self, event_date, name, description, user_id):
         self.event_date = event_date
         self.name = name
         self.description = description
-        self.creator_id = user.id
+        self.creator_id = user_id
 
     def __repr__(self):
         return '<Event {}: {}>'.format(self.id, self.name, self.event_date)
@@ -112,11 +112,3 @@ class Subscription(db.Model):
 
     def __repr__(self):
         return '<Subscr {}: {} to {}>'.format(self.id, self.user.username, self.event.name)
-
-
-
-
-
-# Bin ich eigentlich dumm
-#def get_event_creator_query():
-#    return db.session.query(Event, User).join(User)

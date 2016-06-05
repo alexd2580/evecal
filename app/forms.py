@@ -1,10 +1,9 @@
 from wtforms import \
     StringField, BooleanField, \
-    PasswordField, DateTimeField, \
-    HiddenField
+    PasswordField, HiddenField
 from wtforms.validators import DataRequired, Email
 from wtforms.widgets import TextArea
-from wtforms.fields.html5 import EmailField
+from wtforms.fields.html5 import EmailField, DateTimeField
 
 from flask_wtf import Form
 
@@ -21,11 +20,8 @@ class RegisterForm(Form):
 
 class EventForm(Form):
     eventname = StringField('eventname', validators=[DataRequired()])
-    starttime = DateTimeField('starttime', validators=[DataRequired()])
+    starttime = DateTimeField('starttime', validators=[DataRequired()])#, format='%Y-%m-%d')
     eventdescr = StringField('eventdescr', validators=[], widget=TextArea())
 
-class EditForm(Form):
+class EditForm(EventForm):
     eventid = HiddenField('id')
-    eventname = StringField('eventname', validators=[DataRequired()])
-    starttime = DateTimeField('starttime', validators=[DataRequired()])
-    eventdescr = StringField('eventdescr', validators=[], widget=TextArea())

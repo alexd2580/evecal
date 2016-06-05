@@ -1,0 +1,71 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="jumbotron">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="page-header">
+                    <p><h2 class="glowtext">Add event</h2></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="well">
+         <form action="?next={{next}}" method="post" class="form-horizontal">
+            {{ form.hidden_tag() }}
+            <fieldset>
+                <div class="form-group">
+                    <label for="eventname" class="control-label col-xs-3">
+                        Event name
+                    </label>
+                    <div class="col-xs-5">
+                        {{ form.eventname() }}
+                    </div>
+                    {% for error in form.eventname.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}<br>
+                </div>
+
+                <div class="form-group">
+                    <label for="starttime" class="control-label col-xs-3">
+                        Sstart time
+                    </label>
+                    <div class="col-xs-5">
+                        {{ form.starttime() }}
+                    </div>
+                    {% for error in form.starttime.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}<br>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventdescr" class="control-label col-xs-3">
+                        Description
+                    </label>
+                    <div class="col-xs-5">
+                        {{ form.eventdescr() }}
+                    </div>
+                    {% for error in form.eventdescr.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}<br>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-xs-offset-3 col-xs-5">
+                        <button type="submit" class="btn btn-primary">
+                            Add Event
+                        </button>
+                    </div>
+                </div>
+             </fieldset>
+         </form>
+    </div>
+
+<div class="container">
+
+{% endblock %}

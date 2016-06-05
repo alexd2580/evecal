@@ -31,16 +31,21 @@ def logout_required(f):
         return redirect(url_for('index_route'))
     return decorated_function
 
+# / redirects to calendar
 @app.route('/')
 def root():
-    return redirect(url_for('login_route'))
+    return redirect(url_for('calendar_route'))
     #render_template('index.html')
 
+# TODO remove /index
 @app.route('/index')
 @login_required
 def index_route():
     return render_template('index.html', user=current_user)
 
+# Login form
+# Get request displays a login-form
+# Post checks user credentials and loggs in the user, redirects to calendar
 @app.route('/login', methods=['GET', 'POST'])
 @logout_required
 def login_route():
@@ -53,20 +58,28 @@ def login_route():
         if user is None or not user.verify_password(password):
             flash('Invalid username/password pair')
             return render_template('login.html', title='Sign In', form=form)
+
         login_user(user)
         flash('Logged in successfully as {}'.format(username))
+
         next = request.args.get('next')
-        if not next_is_valid(next):
-            return redirect(url_for('index_route'))
-        return redirect(next or url_for('index_route'))
+        if next_is_valid(next):
+            return redirect(next)
+        return redirect(url_for('index_route'))
+
     return render_template('login.html', title='Sign In', form=form)
 
+# Loggs out the user
+# Redirects to calendar
 @app.route('/logout')
 @login_required
 def logout_route():
     logout_user()
-    return redirect(url_for('login_route'))
+    return redirect(url_for('calendar_route'))
 
+# On GET displays a register new user form
+# On post checks if the username is already taken
+# Adds a user-entry and redirects to login
 @app.route('/register', methods=['GET','POST'])
 @logout_required
 def register_route():
@@ -87,6 +100,7 @@ def register_route():
             db.session.commit()
             flash('Successfully registered')
             return redirect(url_for('login_route'))
+
     return render_template('register.html', title='Register', form=form)
 
 # Returns the date of the first day of the next month
@@ -130,30 +144,38 @@ def get_day_and_events(year, month, day):
         Event.event_date < tomorrow.strftime('%Y-%m-%d')).all()
     return events
 
+# displays the calendar.
+# If year and month are submitted, displays a month views
+# If the day is also submitted displays a day-view
+# POST requests "subscribe" and "unsubscribe"  perform the named actions
+# and redirect back to the calendar
 @app.route('/calendar', methods=['GET','POST'])
 def calendar_route():
-    unsubscribe = request.form.get('unsubscribe')
-    if unsubscribe is not None:
-        xs = Subscription.query\
-            .filter(Subscription.event_id == int(unsubscribe))\
-            .filter(Subscription.user_id == current_user.id).all()
+    if request.method == 'POST':
+        unsubscribe = request.form.get('unsubscribe')
+        if unsubscribe is not None:
+            optionally_redundant_subscriptions = Subscription.query\
+                .filter(Subscription.event_id == int(unsubscribe))\
+                .filter(Subscription.user_id == current_user.id)
 
-        for s in xs:
-            db.session.delete(s)
-        db.session.commit()
-
-        flash('Unsubscribed from event')
-
-    subscribe = request.form.get('subscribe')
-    if subscribe is not None:
-        xs = Subscription.query\
-            .filter(Subscription.event_id == int(subscribe))\
-            .filter(Subscription.user_id == current_user.id).all()
-        if len(xs) == 0:
-            s = Subscription(current_user.id, int(subscribe))
-            db.session.add(s)
+            optionally_redundant_subscriptions.delete()
             db.session.commit()
-            flash('Subscribed to event')
+            flash('Unsubscribed from event')
+
+        subscribe = request.form.get('subscribe')
+        if subscribe is not None:
+            # Integrity checks
+            optionally_redundant_subscriptions = Subscription.query\
+                .filter(Subscription.event_id == int(subscribe))\
+                .filter(Subscription.user_id == current_user.id).all()
+            if not optionally_redundant_subscriptions:
+                s = Subscription(current_user.id, int(subscribe))
+                db.session.add(s)
+                db.session.commit()
+                flash('Subscribed to event')
+            flash('Already subscribed to that event')
+
+        redirect(url_for('calendar_route'))
 
     now = date.today()
     year = int(request.args.get('year') or now.year)
@@ -181,8 +203,29 @@ def calendar_route():
         month=month,
         day=day,
         month_name=month_name,
-        this_url=quote(request.url),
+        this_path=quote(request.path),
         day_and_events=day_and_events)
+
+
+@app.route('/add', methods=['GET', 'POST'])
+def add_route():
+    form = EventForm()
+    if form.validate_on_submit():
+        event_name = request.form['eventname']
+        event_date = form.starttime.data
+        event_descr = request.form['eventdescr']
+        e = Event(event_date, event_name, event_descr, current_user.id)
+
+        db.session.add(e)
+        db.session.commit()
+
+        return redirect(url_for('calendar_route'))
+
+    return render_template(
+        'add_event.html',
+        form=form,
+        title='Add Event')
+
 
 @app.route('/edit', methods=['GET', 'POST'])
 def edit_route():
@@ -198,7 +241,8 @@ def edit_route():
         event.name = request.form['eventname']
         event.event_date = form.starttime.data # request.form['starttime']
         # any reasons to use only one of the accessors?
-        event.eventdescr = request.form['eventdescr']
+        event.description = request.form['eventdescr']
+
         db.session.commit()
 
         return redirect(next)
@@ -223,6 +267,7 @@ def edit_route():
         title='Edit Event',
         next=next,
         form=form)
+
 
 @app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):

@@ -15,7 +15,7 @@ from urllib.parse import quote
 
 print('Processing views.py')
 
-valid_paths = ['/', '/index', '/login', '/logout', '/register']
+valid_paths = ['/', '/login', '/logout', '/register']
 
 def next_is_valid(next):
     for i in valid_paths:
@@ -28,20 +28,13 @@ def logout_required(f):
     def decorated_function(*args, **kwargs):
         if current_user.is_anonymous:
             return f(*args, **kwargs)
-        return redirect(url_for('index_route'))
+        return redirect(url_for('calendar_route'))
     return decorated_function
 
 # / redirects to calendar
 @app.route('/')
 def root():
     return redirect(url_for('calendar_route'))
-    #render_template('index.html')
-
-# TODO remove /index
-@app.route('/index')
-@login_required
-def index_route():
-    return render_template('index.html', user=current_user)
 
 # Login form
 # Get request displays a login-form
@@ -65,7 +58,7 @@ def login_route():
         next = request.args.get('next')
         if next_is_valid(next):
             return redirect(next)
-        return redirect(url_for('index_route'))
+        return redirect(url_for('calendar_route'))
 
     return render_template('login.html', title='Sign In', form=form)
 
@@ -173,7 +166,8 @@ def calendar_route():
                 db.session.add(s)
                 db.session.commit()
                 flash('Subscribed to event')
-            flash('Already subscribed to that event')
+            else:
+                flash('Already subscribed to that event')
 
         next = request.form.get('next') or url_for('calendar_route')
         return redirect(next)
@@ -321,13 +315,10 @@ def edit_route():
         next=next,
         form=form)
 
-
-
-
 @app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):
     flash('Invalid path: {}'.format(other))
-    return redirect(url_for('index_route'))
+    return redirect(url_for('calendar_route'))
 
 
 """

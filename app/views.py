@@ -175,7 +175,8 @@ def calendar_route():
                 flash('Subscribed to event')
             flash('Already subscribed to that event')
 
-        redirect(url_for('calendar_route'))
+        next = request.form.get('next') or url_for('calendar_route')
+        return redirect(next)
 
     now = date.today()
     year = int(request.args.get('year') or now.year)
@@ -206,6 +207,58 @@ def calendar_route():
         this_path=quote(request.path),
         day_and_events=day_and_events)
 
+@app.route('/subscriptions', methods=['GET', 'POST'])
+@login_required
+def subscriptions_route():
+    if request.method == 'POST':
+        unsubscribe = request.form.get('unsubscribe')
+        if unsubscribe is not None:
+            optionally_redundant_subscriptions = Subscription.query\
+                .filter(Subscription.event_id == int(unsubscribe))\
+                .filter(Subscription.user_id == current_user.id)
+
+            optionally_redundant_subscriptions.delete()
+            db.session.commit()
+            flash('Unsubscribed from event')
+
+        return redirect(url_for('subscriptions_route'))
+
+    # events = current_user.subscriptions
+    events = db.session.query(Event).join(Subscription) \
+        .filter(Subscription.user_id==current_user.id) \
+        .order_by(Event.event_date).all()
+
+    def with_word(num, singular, multiple):
+        if num < 0:
+            return ''
+        elif num == 1:
+            return str(num) + ' ' + singular + ' '
+        else:
+            return str(num) + ' ' + multiple + ' '
+
+    def remaining_to_string(rem):
+        if rem.seconds < 60:
+            return 'now'
+        if rem.days < 0:
+            return 'already passed'
+
+        (minutes, _) = divmod(rem.seconds, 60)
+        (hours, minutes) = divmod(minutes, 60)
+
+        s = with_word(rem.days, 'day', 'days')
+        s += with_word(hours, 'hour', 'hours')
+        s += with_word(minutes, 'minute', 'minutes')
+
+        return s.strip()
+
+    now = datetime.now()
+    for e in events:
+        e.remaining_time = remaining_to_string(e.event_date - now)
+
+    return render_template(
+        'subscriptions.html',
+        title='Your subscriptions',
+        events=events)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_route():
@@ -267,6 +320,8 @@ def edit_route():
         title='Edit Event',
         next=next,
         form=form)
+
+
 
 
 @app.route('/<other>', methods=['GET', 'POST'])

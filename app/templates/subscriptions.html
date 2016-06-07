@@ -10,11 +10,7 @@
             <div class="col-lg-8">
                 <div class="page-header">
                     <h2 class="glowtext">
-                        Calendar/
-                        <a href="?year={{year}}&month={{month}}">
-                            {{month_name}}
-                        </a>
-                        /{{day}}
+                        Your Subscriptions
                     </h2>
                 </div>
             </div>
@@ -24,16 +20,19 @@
     <table class="table table-stripped table-responsive">
         <thead>
             <th>Event</th>
-            <th>Date</th>
-            <th>Author</th>
+            <th width="100">Date</th>
+            <th width="100">Remaining</th>
+            <th width="100">Author</th>
             <th width="10"></th>
             <th width="10"></th>
         </thead>
         <tbody>
-            {% for event in day_and_events %}
+            {% for event in events %}
             <tr>
                 <td><p>{{event.name}}</p></td>
-                <td><p>{{event.event_date.strftime('%H:%M')}}</p></td>
+                <td><p>{{event.event_date.strftime('%Y-%m-%d')}}<br>
+                    {{event.event_date.strftime('%H:%M')}}</p></td>
+                <td><p>{{event.remaining_time}}</p></td>
                 <td><p>{{event.creator.username}}</p></td>
 
                 <td>
@@ -41,7 +40,6 @@
                         {% if event.id in current_user.subscription_ids %}
                             <form action="" method="post">
                                 <input type="hidden"  name="unsubscribe" value="{{event.id}}">
-                                <input type="hidden"  name="next" value="/calendar?year={{year}}&month={{month}}&day={{day}}">
                                 <p>
                                     <button type="submit" class="btn btn-default btn-xs btn-error">
                                         <span class="glyphicon glyphicon-minus" aria-hidden="true"></span> Unsubscribe
@@ -51,7 +49,6 @@
                         {% else %}
                             <form action="" method="post">
                                 <input type="hidden"  name="subscribe" value="{{event.id}}">
-                                <input type="hidden"  name="next" value="/calendar?year={{year}}&month={{month}}&day={{day}}">
                                 <p>
                                     <button type="submit" class="btn btn-default btn-xs btn-success">
                                         <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Subscribe

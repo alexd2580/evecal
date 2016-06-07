@@ -23,10 +23,10 @@ class User(db.Model):
 
     # The events a user has subscribed to
     subscriptions = db.relationship('Subscription', back_populates='user', lazy='joined')
-    @property
-    def subscription_ids(self): #polyorm rewrite
-        return [ s.event.id for s in self.subscriptions ]
 
+    @property
+    def subscription_ids(self): #poly-orm rewrite
+        return [ s.event.id for s in self.subscriptions ]
 
 
     def __init__(self, username, password, email=None):

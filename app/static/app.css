@@ -24,6 +24,17 @@ input, select, textarea {
     background-color: #fff;
 }
 
+.row-with-padding {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.panel-with-margin {
+    margin-left: 2px;
+    margin-right: 2px;
+    margin-bottom: 4px;
+}
+
 .jumbotron {
     background: transparent;
 }
@@ -51,4 +62,40 @@ input, select, textarea {
 
 .custom_centered {
     text-align: center;
+}
+
+.col-xs-7ths,
+.col-sm-7ths,
+.col-md-7ths,
+.col-lg-7ths {
+    position: relative;
+    min-height: 1px;
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+.col-xs-7ths {
+    width: 13%;
+    float: left;
+}
+
+@media (min-width: 768px) {
+    .col-sm-7ths {
+        width: 13%;
+        float: left;
+    }
+}
+
+@media (min-width: 992px) {
+    .col-md-7ths {
+        width: 13%;
+        float: left;
+    }
+}
+
+@media (min-width: 1200px) {
+    .col-lg-7ths {
+        width: 13%;
+        float: left;
+    }
 }

@@ -6,36 +6,32 @@
 <div class="container-full">
 
     <div class="container jumbotron">
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="page-header">
-                    <h2 class="glowtext">
-                        Calendar/{{month_name}}
-                    </h2>
-                </div>
-            </div>
+        <div class="page-header">
+            <h2 class="glowtext">
+                Calendar/{{month_name}}
+            </h2>
         </div>
     </div>
 
-    <table class="table table-stripped table-responsive">
-        <thead>
-            {% for day,_ in month_and_events[0] %}
-                <th>{{day}}</th>
-            {% endfor %}
-        </thead>
-        <tbody>
-            {% for week in month_and_events %}
-            <tr>
-                {% for _,day in week %}
-                <td><a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
-                    {{day.strftime('%Y-%m-%d')}}
-                </a></td>
+    <div class="container">
+        {% for week in month_and_events %}
+            <div class="row">
+                {% for day_name,day in week %}
+                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-with-margin">
+                        <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
+                            <div class="row-with-padding">
+                                {{day_name}}
+                            </div>
+                            <div class="row-with-padding">
+                                {{day.strftime('%Y-%m-%d')}}
+                            </div>
+                        </a>
+                    </div>
                 {% endfor %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </div>
+        {% endfor %}
 
+    </div>
 </div>
 
 {% endblock %}

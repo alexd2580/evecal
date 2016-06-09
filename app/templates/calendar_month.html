@@ -16,8 +16,10 @@
     <div class="container">
         <div class="row">
             {% for day_name,_,_,_,_ in month_and_events[0] %}
-                <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-4 panel panel-with-margin bg-transparent">
-                    {{day_name}}
+                <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-4 gridbox-padding">
+                    <div class="panel panel-no-margin bg-transparent shadow-font">
+                        {{day_name}}
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -38,10 +40,10 @@
                             <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
                                 <div class="row small-padding-no-hmargin">
                                     <div class="col-xs-6 small-padding-no-hmargin">
-                                        <div class="row small-padding-no-hmargin date-font">{{day.strftime('%Y')}}</div>
-                                        <div class="row small-padding-no-hmargin date-font">{{day.strftime('%m')}}</div>
+                                        <div class="row small-padding-no-hmargin shadow-font">{{day.strftime('%Y')}}</div>
+                                        <div class="row small-padding-no-hmargin shadow-font">{{day.strftime('%m')}}</div>
                                     </div>
-                                    <div class="col-xs-6 h2 small-padding-no-hmargin date-font">
+                                    <div class="col-xs-6 h2 small-padding-no-hmargin shadow-font">
                                         {{day.strftime('%d')}}
                                     </div>
                                 </div>

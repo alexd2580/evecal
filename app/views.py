@@ -5,11 +5,13 @@ from flask import \
     make_response
 from flask_login import login_required, current_user, login_user, logout_user
 
+from sqlalchemy.orm import lazyload
+
 from . import app, db
 from .models import *
 from .forms import *
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time
 from calendar import Calendar
 from urllib.parse import quote
 
@@ -105,7 +107,8 @@ def get_next_month(this_month):
         y += 1
     return date(y, m, 1)
 
-# get_month_and_events :: [Week [Day Name Date [Event ID Name]]]
+# get_month_and_events :: [Week [Day Name Date [Event]]]
+# get_month_and_events :: [Week [Day Name Date (Bool, Bool, Bool))]]
 def get_month_and_events(year, month):
     cal = Calendar(0) # default replace by user db?
     the_month = cal.monthdatescalendar(year, month)
@@ -114,11 +117,29 @@ def get_month_and_events(year, month):
     end = the_month[-1][-1]
     events = Event.query.filter(
         Event.event_date > begin.strftime('%Y-%m-%d'),
-        Event.event_date < end.strftime('%Y-%m-%d'))
-    print(events)
+        Event.event_date < end.strftime('%Y-%m-%d')) \
+        .options(lazyload('creator')).all()
+
+    your_subscriptions = []
+    if not current_user.is_anonymous:
+        your_subscriptions = db.session.query(Subscription.event_id) \
+            .filter(Subscription.user_id == current_user.id).all()
 
     def per_day(day):
-        return (day.strftime('%A'), day)
+        some_events = False
+        created = False
+        subscribed = False
+
+        for e in events:
+            datetime_day = datetime.combine(day, time())
+            next_day = datetime_day + timedelta(days = 1)
+            if e.event_date > datetime_day and e.event_date < next_day:
+                some_events = True
+                if not current_user.is_anonymous:
+                    created |= e.creator_id == current_user.id
+                    subscribed |= e.id in your_subscriptions
+
+        return (day.strftime('%A'), day, some_events, created, subscribed)
 
     def per_week(week):
         return [per_day(d) for d in week]
@@ -182,6 +203,7 @@ def calendar_route():
 
     if day is None:
         month_and_events = get_month_and_events(year, month)
+
         return render_template(
             'calendar_month.html',
             title='Calendar',

@@ -16,8 +16,17 @@
     <div class="container">
         {% for week in month_and_events %}
             <div class="row">
-                {% for day_name,day in week %}
+                {% for day_name,day,some_events,created,subscribed in week %}
+
+                {% if subscribed %}
+                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-active panel-with-margin">
+                {% elif created %}
+                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-success panel-with-margin">
+                {% elif some_events %}
+                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-info panel-with-margin">
+                {% else %}
                     <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-with-margin">
+                {% endif %}
                         <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
                             <div class="row-with-padding">
                                 {{day_name}}

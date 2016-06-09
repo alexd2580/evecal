@@ -1,4 +1,4 @@
-<!-- extend from base layout -->
+ <!-- extend from base layout -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -14,27 +14,39 @@
     </div>
 
     <div class="container">
+        <div class="row">
+            {% for day_name,_,_,_,_ in month_and_events[0] %}
+                <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-4 panel panel-with-margin bg-transparent">
+                    {{day_name}}
+                </div>
+            {% endfor %}
+        </div>
+
         {% for week in month_and_events %}
             <div class="row">
                 {% for day_name,day,some_events,created,subscribed in week %}
-
-                {% if subscribed %}
-                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-active panel-with-margin">
-                {% elif created %}
-                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-success panel-with-margin">
-                {% elif some_events %}
-                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-info panel-with-margin">
-                {% else %}
-                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-3 panel panel-with-margin">
-                {% endif %}
-                        <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
-                            <div class="row-with-padding">
-                                {{day_name}}
-                            </div>
-                            <div class="row-with-padding">
-                                {{day.strftime('%Y-%m-%d')}}
-                            </div>
-                        </a>
+                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-4 gridbox-padding">
+                    {% if subscribed %}
+                        <div class="panel no-margin bg-green">
+                    {% elif created %}
+                        <div class="panel no-margin bg-yellow">
+                    {% elif some_events %}
+                        <div class="panel no-margin bg-light-grey">
+                    {% else %}
+                        <div class="panel no-margin bg-dark-grey">
+                    {% endif %}
+                            <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
+                                <div class="row small-padding-no-hmargin">
+                                    <div class="col-xs-6 small-padding-no-hmargin">
+                                        <div class="row small-padding-no-hmargin date-font">{{day.strftime('%Y')}}</div>
+                                        <div class="row small-padding-no-hmargin date-font">{{day.strftime('%m')}}</div>
+                                    </div>
+                                    <div class="col-xs-6 h2 small-padding-no-hmargin date-font">
+                                        {{day.strftime('%d')}}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 {% endfor %}
             </div>

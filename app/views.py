@@ -124,6 +124,7 @@ def get_month_and_events(year, month):
     if not current_user.is_anonymous:
         your_subscriptions = db.session.query(Subscription.event_id) \
             .filter(Subscription.user_id == current_user.id).all()
+        your_subscriptions = [x for (x,) in your_subscriptions]
 
     def per_day(day):
         some_events = False

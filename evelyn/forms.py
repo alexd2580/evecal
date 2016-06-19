@@ -1,6 +1,7 @@
 from wtforms import \
     StringField, BooleanField, \
-    PasswordField, HiddenField
+    PasswordField, HiddenField, \
+    SelectField
 from wtforms.validators import DataRequired, Email
 from wtforms.widgets import TextArea
 from wtforms.fields.html5 import EmailField, DateTimeField
@@ -25,3 +26,8 @@ class EventForm(Form):
 
 class EditForm(EventForm):
     eventid = HiddenField('id')
+
+class SubscriptionForm(Form):
+    subscriptionid = HiddenField('subscriptionid')
+    comment = StringField('comment', validators=[], widget=TextArea())
+    commitment = SelectField('commitment', choices=[('Yes','Yes'), ('No','No'), ('Maybe','Maybe')])

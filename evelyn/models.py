@@ -1,11 +1,14 @@
 
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from . import app, db, login_manager
+from . import login_manager
+from flask_sqlalchemy import SQLAlchemy
+import enum
 
 #TODO mixin created_at, modified_at
 
-print('Processing models.py')
+print('Initializing database')
+db = SQLAlchemy()
 
 # A registered user
 class User(db.Model):
@@ -95,6 +98,11 @@ class Event(db.Model):
     def __repr__(self):
         return '<Event {}: {}>'.format(self.id, self.name, self.event_date)
 
+class Commitment(enum.Enum):
+    yes = 'yes'
+    no = 'no'
+    maybe = 'maybe'
+
 # A subscription of a user to an event. M to N relation
 class Subscription(db.Model):
     __tablename__ = 'subscription'
@@ -106,9 +114,16 @@ class Subscription(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'))
     event = db.relationship('Event', back_populates='subscriptions', lazy='joined')
 
+    # Whether the user actively takes part in the event or not
+    commitment = db.Column(db.Enum('Yes', 'No', 'Maybe'))
+
+    # Each user can add a comment (for example the role he is going to play in the event)
+    comment = db.Column(db.Text)
+
     def __init__(self, user_id, event_id):
         self.user_id = user_id
         self.event_id = event_id
+        self.commitment = 'Yes'
 
     def __repr__(self):
         return '<Subscr {}: {} to {}>'.format(self.id, self.user.username, self.event.name)

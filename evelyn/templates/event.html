@@ -1,0 +1,90 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-7">
+            <div class="well">
+
+                <div class="row">
+                    <div class="page-header">
+                        <h2 class="shadow-font">
+                            Event/{{event.name}}
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="row">
+                    {{event.event_date}}
+                </div>
+
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="well">
+
+                <p><h3 class="shadow-font">Subscribers</h3></p>
+
+                {% for subscription in event.subscriptions %}
+                    <div class="panel panel-default panel-subscription">
+                        <div class="panel-heading"><b>{{subscription.user.username}}</b></div>
+                        {% if subscription.user_id == current_user.id %}
+                            {% set subscription_form = make_subscription_form(subscription) %}
+                            <div class="panel-body">
+                                <form action="/edit_subscription" method="post" class="form-horizontal">
+                                   {{ subscription_form.hidden_tag() }}
+                                   <fieldset>
+                                       <div class="form-group form-group-full">
+                                           {{ subscription_form.comment() }}
+                                       </div>
+                                       <div class="form-group">
+                                           <label for="commitment" class="control-label col-xs-6">
+                                               Commitment
+                                           </label>
+                                           <div class="col-xs-6">
+                                               {{ subscription_form.commitment() }}
+                                           </div>
+                                       </div>
+                                       <div class="form-group">
+                                           <div class="col-xs-offset-6 col-xs-6">
+                                               <button type="submit" class="btn btn-primary">
+                                                   Update
+                                               </button>
+                                           </div>
+                                       </div>
+                                   </fieldset>
+                               </form>
+                           </div>
+
+                        {% else %}
+                            {% if subscription.comment %}
+                                <div class="panel-body">
+                                    <div class="form-horizontal">
+                                        <div class="form-group">
+                                            <label class="control-label col-xs-6">
+                                                Commitment
+                                            </label>
+                                            <div class="col-xs-6">
+                                                {{ subscription.commitment }}
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-full">
+                                            <input type="text" value="{{ subscription.comment }}" readonly/>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}

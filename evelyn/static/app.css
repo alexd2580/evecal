@@ -160,3 +160,20 @@ input, select, textarea {
     color: #DDDDDD;
     text-shadow: -1px 0px 1px black, 0px 1px 1px black, 1px 0px 1px black, 0px -1px 1px black;
 }
+
+.panel-subscription {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.form-horizontal .form-group-full {
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.form-horizontal .control-label {
+    padding-top: 0px;
+}
+
+.form-group-full * {
+    width: 100%;
+}

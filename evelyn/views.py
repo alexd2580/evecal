@@ -3,19 +3,20 @@ from flask import \
     render_template, redirect, url_for, \
     abort, flash, request, current_app, \
     make_response
-from flask_login import login_required, current_user, login_user, logout_user
+from flask_login import \
+    login_required, current_user, \
+    login_user, logout_user
 
 from sqlalchemy.orm import lazyload
-
-from . import app, db
-from .models import *
-from .forms import *
 
 from datetime import date, datetime, timedelta, time
 from calendar import Calendar
 from urllib.parse import quote
 
-print('Processing views.py')
+from .models import *
+from .forms import *
+
+print('Initializing views')
 
 valid_paths = ['/', '/login', '/logout', '/register']
 
@@ -34,14 +35,14 @@ def logout_required(f):
     return decorated_function
 
 # / redirects to calendar
-@app.route('/')
+@current_app.route('/')
 def root():
     return redirect(url_for('calendar_route'))
 
 # Login form
 # Get request displays a login-form
 # Post checks user credentials and loggs in the user, redirects to calendar
-@app.route('/login', methods=['GET', 'POST'])
+@current_app.route('/login', methods=['GET', 'POST'])
 @logout_required
 def login_route():
     form = LoginForm()
@@ -66,7 +67,7 @@ def login_route():
 
 # Loggs out the user
 # Redirects to calendar
-@app.route('/logout')
+@current_app.route('/logout')
 @login_required
 def logout_route():
     logout_user()
@@ -75,7 +76,7 @@ def logout_route():
 # On GET displays a register new user form
 # On post checks if the username is already taken
 # Adds a user-entry and redirects to login
-@app.route('/register', methods=['GET','POST'])
+@current_app.route('/register', methods=['GET','POST'])
 @logout_required
 def register_route():
     form = RegisterForm()
@@ -131,10 +132,11 @@ def get_month_and_events(year, month):
         created = False
         subscribed = False
 
+        datetime_day = datetime.combine(day, time())
+        next_day = datetime_day + timedelta(days = 1)
+
         for e in events:
-            datetime_day = datetime.combine(day, time())
-            next_day = datetime_day + timedelta(days = 1)
-            if e.event_date > datetime_day and e.event_date < next_day:
+            if e.event_date >= datetime_day and e.event_date < next_day:
                 some_events = True
                 if not current_user.is_anonymous:
                     created |= e.creator_id == current_user.id
@@ -164,7 +166,7 @@ def get_day_and_events(year, month, day):
 # If the day is also submitted displays a day-view
 # POST requests "subscribe" and "unsubscribe"  perform the named actions
 # and redirect back to the calendar
-@app.route('/calendar', methods=['GET','POST'])
+@current_app.route('/calendar', methods=['GET','POST'])
 def calendar_route():
     if request.method == 'POST':
         unsubscribe = request.form.get('unsubscribe')
@@ -224,7 +226,53 @@ def calendar_route():
         this_path=quote(request.path),
         day_and_events=day_and_events)
 
-@app.route('/subscriptions', methods=['GET', 'POST'])
+@current_app.route('/event', methods=['GET', 'POST'])
+def event_route():
+    event_id = request.args.get('id')
+    if event_id is None:
+        flash('Event id required for "/event"')
+        return redirect(url_for('calendar_route'))
+
+    event = Event.query.filter(Event.id == event_id).first()
+    if event is None:
+        flash('Event with id ' + event_id + ' not found')
+        return redirect(url_for('calendar_route'))
+
+    def make_subscription_form(subscr):
+        subscr_form = SubscriptionForm()
+        subscr_form.subscriptionid.data = subscr.id
+        subscr_form.comment.data = subscr.comment
+        subscr_form.commitment.data = subscr.commitment
+        return subscr_form
+
+    event_form = EditForm()
+    event_form.eventid.data = event.id
+
+    return render_template(
+        'event.html',
+        title = 'Event',
+        event = event,
+        make_subscription_form = make_subscription_form,
+        event_form = event_form)
+
+@current_app.route('/edit_subscription', methods=['POST'])
+def edit_subscription_route():
+    form = SubscriptionForm()
+    if form.validate_on_submit():
+        subscription = Subscription.query \
+            .filter(Subscription.id == request.form.get('subscriptionid')) \
+            .options(lazyload('user')) \
+            .options(lazyload('event')).one()
+
+        subscription.comment = request.form.get('comment')
+        subscription.commitment = request.form.get('commitment')
+        db.session.commit()
+
+        return redirect(url_for('event_route', id=subscription.event_id))
+
+    return redirect(url_for('calendar_route'))
+
+@current_app.route('/subscriptions', methods=['GET', 'POST'])
 @login_required
 def subscriptions_route():
     if request.method == 'POST':
@@ -277,7 +325,7 @@ def subscriptions_route():
         title='Your subscriptions',
         events=events)
 
-@app.route('/add', methods=['GET', 'POST'])
+@current_app.route('/add', methods=['GET', 'POST'])
 def add_route():
     form = EventForm()
     if form.validate_on_submit():
@@ -297,7 +345,7 @@ def add_route():
         title='Add Event')
 
 
-@app.route('/edit', methods=['GET', 'POST'])
+@current_app.route('/edit', methods=['GET', 'POST'])
 def edit_route():
     next = request.args.get('next')
     if next is None:
@@ -338,7 +386,7 @@ def edit_route():
         next=next,
         form=form)
 
-@app.route('/<other>', methods=['GET', 'POST'])
+@current_app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):
     flash('Invalid path: {}'.format(other))
     return redirect(url_for('calendar_route'))

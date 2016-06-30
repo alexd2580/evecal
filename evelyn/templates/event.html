@@ -7,19 +7,51 @@
     <div class="row">
         <div class="col-md-7">
             <div class="well">
-
-                <div class="row">
-                    <div class="page-header">
-                        <h2 class="shadow-font">
-                            Event/{{event.name}}
-                        </h2>
-                    </div>
+                <div class="page-header">
+                    <h2 class="shadow-font" width="50%">
+                        Event/{{event_form.eventname.data}}
+                    </h2>
                 </div>
 
-                <div class="row">
-                    {{event.event_date}}
-                </div>
-
+                <form action="/event" method="post" class="form-horizontal">
+                   {{ event_form.hidden_tag() }}
+                   <fieldset>
+                       <div class="form-group">
+                           <label for="eventname" class="control-label col-xs-6">
+                               Event name
+                           </label>
+                           <div class="col-xs-6">
+                               {{ event_form.eventname() }}
+                           </div>
+                       </div>
+                       <div class="form-group">
+                           <label for="eventdate" class="control-label col-xs-6">
+                               Start time
+                           </label>
+                           <div class="col-xs-6">
+                               {{ event_form.starttime() }}
+                           </div>
+                       </div>
+                       <div class="form-group">
+                           <label for="eventdate" class="control-label col-xs-6">
+                               Time left
+                           </label>
+                           <div class="col-xs-6">
+                               {{ event_form.timeleft(disabled=True) }}
+                           </div>
+                       </div>
+                       <div class="form-group form-group-full">
+                           {{ event_form.eventdescr() }}
+                       </div>
+                       <div class="form-group">
+                           <div class="col-xs-offset-6 col-xs-6">
+                               <button type="submit" class="btn btn-primary">
+                                   Update event
+                               </button>
+                           </div>
+                       </div>
+                   </fieldset>
+                </form>
             </div>
         </div>
         <div class="col-md-5">
@@ -27,7 +59,7 @@
 
                 <p><h3 class="shadow-font">Subscribers</h3></p>
 
-                {% for subscription in event.subscriptions %}
+                {% for subscription in subscriptions %}
                     <div class="panel panel-default panel-subscription">
                         <div class="panel-heading"><b>{{subscription.user.username}}</b></div>
                         {% if subscription.user_id == current_user.id %}
@@ -70,9 +102,7 @@
                                                 {{ subscription.commitment }}
                                             </div>
                                         </div>
-                                        <div class="form-group form-group-full">
-                                            <input type="text" value="{{ subscription.comment }}" readonly/>
-                                        </div>
+                                        <p>{{ subscription.comment }}</p>
                                     </div>
                                 </div>
                             {% endif %}

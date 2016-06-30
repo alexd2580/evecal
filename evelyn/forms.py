@@ -23,6 +23,8 @@ class EventForm(Form):
     eventname = StringField('eventname', validators=[DataRequired()])
     starttime = DateTimeField('starttime', validators=[DataRequired()])#, format='%Y-%m-%d')
     eventdescr = StringField('eventdescr', validators=[], widget=TextArea())
+    creatorid = HiddenField('creatorid')
+    timeleft = StringField('timeleft') # only used passively
 
 class EditForm(EventForm):
     eventid = HiddenField('id')

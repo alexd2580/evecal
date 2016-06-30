@@ -18,6 +18,32 @@ from .forms import *
 
 print('Initializing views')
 
+# returns the timedelta as a string (currently english)
+# if it is less than a minute, returns "now"
+# if the timedelta is negative, returns "already passed"
+def timedelta_to_string(rem):
+    def with_word(num, singular, multiple):
+        if num < 0:
+            return ''
+        elif num == 1:
+            return str(num) + ' ' + singular + ' '
+        else:
+            return str(num) + ' ' + multiple + ' '
+
+    if rem.seconds < 60:
+        return 'now'
+    if rem.days < 0:
+        return 'already passed'
+
+    (minutes, _) = divmod(rem.seconds, 60)
+    (hours, minutes) = divmod(minutes, 60)
+
+    s = with_word(rem.days, 'day', 'days')
+    s += with_word(hours, 'hour', 'hours')
+    s += with_word(minutes, 'minute', 'minutes')
+
+    return s.strip()
+
 valid_paths = ['/', '/login', '/logout', '/register']
 
 def next_is_valid(next):
@@ -226,6 +252,11 @@ def calendar_route():
         this_path=quote(request.path),
         day_and_events=day_and_events)
 
+# Route for /event
+# Handles GET requests, which display the event. Event owners are presented with an edit form
+# Right side of this view contains the list of subscribers, which can edit their own subscriptions.
+# Handles POST requests, which are used to edit the event.
+# Redirects to /event?id=_
 @current_app.route('/event', methods=['GET', 'POST'])
 def event_route():
     event_id = request.args.get('id')
@@ -247,13 +278,21 @@ def event_route():
 
     event_form = EditForm()
     event_form.eventid.data = event.id
+    event_form.eventname.data = event.name
+    event_form.starttime.data = event.event_date
+    event_form.eventdescr.data = event.description
+    event_form.creatorid.data = event.creator_id
+    now = datetime.now()
+    event_form.timeleft.data = timedelta_to_string(event.event_date - now)
 
     return render_template(
         'event.html',
         title = 'Event',
-        event = event,
+        subscriptions = event.subscriptions,
         make_subscription_form = make_subscription_form,
         event_form = event_form)
+
+
 
 @current_app.route('/edit_subscription', methods=['POST'])
 def edit_subscription_route():
@@ -293,32 +332,9 @@ def subscriptions_route():
         .filter(Subscription.user_id==current_user.id) \
         .order_by(Event.event_date).all()
 
-    def with_word(num, singular, multiple):
-        if num < 0:
-            return ''
-        elif num == 1:
-            return str(num) + ' ' + singular + ' '
-        else:
-            return str(num) + ' ' + multiple + ' '
-
-    def remaining_to_string(rem):
-        if rem.seconds < 60:
-            return 'now'
-        if rem.days < 0:
-            return 'already passed'
-
-        (minutes, _) = divmod(rem.seconds, 60)
-        (hours, minutes) = divmod(minutes, 60)
-
-        s = with_word(rem.days, 'day', 'days')
-        s += with_word(hours, 'hour', 'hours')
-        s += with_word(minutes, 'minute', 'minutes')
-
-        return s.strip()
-
     now = datetime.now()
     for e in events:
-        e.remaining_time = remaining_to_string(e.event_date - now)
+        e.remaining_time = timedelta_to_string(e.event_date - now)
 
     return render_template(
         'subscriptions.html',

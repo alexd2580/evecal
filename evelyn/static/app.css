@@ -15,6 +15,10 @@ body {
     -o-background-size: cover;
 }
 
+.panel-body {
+    word-wrap: break-word;
+}
+
 input, select, textarea {
     color: #fff;
     background-color: #333;

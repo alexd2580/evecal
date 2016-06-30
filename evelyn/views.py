@@ -16,6 +16,8 @@ from urllib.parse import quote
 from .models import *
 from .forms import *
 
+################################################################################
+
 print('Initializing views')
 
 # returns the timedelta as a string (currently english)
@@ -44,6 +46,26 @@ def timedelta_to_string(rem):
 
     return s.strip()
 
+# fix_month_year :: Month -> Year -> (Month, Year)
+def fix_month_year(m, y):
+    while m > 12:
+        m -= 12
+        y += 1
+    while m < 1:
+        m += 12
+        y -= 1
+    return (m, y)
+
+# Returns the date of the first day of the next month
+def get_next_month(this_month):
+    (m, y) = fix_month_year(this_month.month + 1, this_month.year)
+    return date(y, m, 1)
+
+# Returns the date of the first day of the prev month
+def get_prev_month(this_month):
+    (m, y) = fix_month_year(this_month.month - 1, this_month.year)
+    return date(y, m, 1)
+
 valid_paths = ['/', '/login', '/logout', '/register']
 
 def next_is_valid(next):
@@ -60,11 +82,13 @@ def logout_required(f):
         return redirect(url_for('calendar_route'))
     return decorated_function
 
+################################################################################
 # / redirects to calendar
 @current_app.route('/')
 def root():
     return redirect(url_for('calendar_route'))
 
+################################################################################
 # Login form
 # Get request displays a login-form
 # Post checks user credentials and loggs in the user, redirects to calendar
@@ -91,6 +115,7 @@ def login_route():
 
     return render_template('login.html', title='Sign In', form=form)
 
+################################################################################
 # Loggs out the user
 # Redirects to calendar
 @current_app.route('/logout')
@@ -99,6 +124,7 @@ def logout_route():
     logout_user()
     return redirect(url_for('calendar_route'))
 
+################################################################################
 # On GET displays a register new user form
 # On post checks if the username is already taken
 # Adds a user-entry and redirects to login
@@ -125,15 +151,7 @@ def register_route():
 
     return render_template('register.html', title='Register', form=form)
 
-# Returns the date of the first day of the next month
-def get_next_month(this_month):
-    # increasing the date by 40 days should
-    m = ((this_month.month + 1) % 13) + 1
-    y = this_month.year
-    if m == 1:
-        y += 1
-    return date(y, m, 1)
-
+################################################################################
 # get_month_and_events :: [Week [Day Name Date [Event]]]
 # get_month_and_events :: [Week [Day Name Date (Bool, Bool, Bool))]]
 def get_month_and_events(year, month):
@@ -187,6 +205,7 @@ def get_day_and_events(year, month, day):
         Event.event_date < tomorrow.strftime('%Y-%m-%d')).all()
     return events
 
+################################################################################
 # displays the calendar.
 # If year and month are submitted, displays a month views
 # If the day is also submitted displays a day-view
@@ -227,7 +246,7 @@ def calendar_route():
     month = int(request.args.get('month') or now.month)
     day = request.args.get('day')
 
-    at_month = date(2016, month, 1)
+    at_month = date(year, month, 1)
     month_name = at_month.strftime("%B")
 
     if day is None:
@@ -252,12 +271,11 @@ def calendar_route():
         this_path=quote(request.path),
         day_and_events=day_and_events)
 
+################################################################################
 # Route for /event
 # Handles GET requests, which display the event. Event owners are presented with an edit form
 # Right side of this view contains the list of subscribers, which can edit their own subscriptions.
-# Handles POST requests, which are used to edit the event.
-# Redirects to /event?id=_
-@current_app.route('/event', methods=['GET', 'POST'])
+@current_app.route('/event', methods=['GET'])
 def event_route():
     event_id = request.args.get('id')
     if event_id is None:
@@ -269,6 +287,7 @@ def event_route():
         flash('Event with id ' + event_id + ' not found')
         return redirect(url_for('calendar_route'))
 
+    # Helper function to create a subscription_form on the fly.
     def make_subscription_form(subscr):
         subscr_form = SubscriptionForm()
         subscr_form.subscriptionid.data = subscr.id
@@ -281,9 +300,9 @@ def event_route():
     event_form.eventname.data = event.name
     event_form.starttime.data = event.event_date
     event_form.eventdescr.data = event.description
-    event_form.creatorid.data = event.creator_id
     now = datetime.now()
-    event_form.timeleft.data = timedelta_to_string(event.event_date - now)
+    event_form.timeleft = timedelta_to_string(event.event_date - now)
+    event_form.creatorid = event.creator_id
 
     return render_template(
         'event.html',
@@ -292,8 +311,28 @@ def event_route():
         make_subscription_form = make_subscription_form,
         event_form = event_form)
 
+################################################################################
+# Handles POST requests, which are used to edit the event.
+# Redirects to /event?id={{request.form['eventid']}}
+@current_app.route('/edit_event', methods=['POST'])
+def edit_event_route():
+    id = request.form['eventid']
 
+    event_form = EditForm()
+    if event_form.validate_on_submit():
+        event = Event.query.filter(Event.id == int(id)).one()
 
+        if event.creator_id == current_user.id:
+            event.name = request.form['eventname']
+            event.event_date = event_form.starttime.data # ?
+            event.description = request.form['eventdescr']
+            db.session.commit()
+        else:
+            flash('You cannot edit this event')
+
+    return redirect(url_for('event_route', id=id))
+
+################################################################################
 @current_app.route('/edit_subscription', methods=['POST'])
 def edit_subscription_route():
     form = SubscriptionForm()
@@ -307,10 +346,9 @@ def edit_subscription_route():
         subscription.commitment = request.form.get('commitment')
         db.session.commit()
 
-        return redirect(url_for('event_route', id=subscription.event_id))
+    return redirect(url_for('event_route', id=subscription.event_id))
 
-    return redirect(url_for('calendar_route'))
-
+################################################################################
 @current_app.route('/subscriptions', methods=['GET', 'POST'])
 @login_required
 def subscriptions_route():
@@ -359,48 +397,6 @@ def add_route():
         'add_event.html',
         form=form,
         title='Add Event')
-
-
-@current_app.route('/edit', methods=['GET', 'POST'])
-def edit_route():
-    next = request.args.get('next')
-    if next is None:
-        next = url_for('calendar_route')
-
-    form = EditForm()
-    if form.validate_on_submit():
-        id = request.form['eventid']
-        event = Event.query.filter(Event.id == int(id)).one()
-
-        event.name = request.form['eventname']
-        event.event_date = form.starttime.data # request.form['starttime']
-        # any reasons to use only one of the accessors?
-        event.description = request.form['eventdescr']
-
-        db.session.commit()
-
-        return redirect(next)
-
-    id = request.args.get('id')
-    if id is None:
-        return redirect(next)
-
-    event = Event.query.filter(Event.id == int(id)).one()
-
-    if event.creator_id != current_user.id:
-        flash('You cannot edit this event')
-        return redirect(next)
-
-    form.eventid.data = event.id
-    form.eventname.data = event.name
-    form.starttime.data = event.event_date
-    form.eventdescr.data = event.description
-
-    return render_template(
-        'edit_event.html',
-        title='Edit Event',
-        next=next,
-        form=form)
 
 @current_app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):

@@ -5,55 +5,108 @@
 
 <div class="container">
     <div class="row">
+
+        <!-- EVENT INFO BLOCK -->
         <div class="col-md-7">
             <div class="well">
                 <div class="page-header">
-                    <h2 class="shadow-font" width="50%">
+                    <h2 class="shadow-font">
                         Event/{{event_form.eventname.data}}
                     </h2>
                 </div>
 
-                <form action="/event" method="post" class="form-horizontal">
-                   {{ event_form.hidden_tag() }}
-                   <fieldset>
-                       <div class="form-group">
-                           <label for="eventname" class="control-label col-xs-6">
-                               Event name
-                           </label>
-                           <div class="col-xs-6">
-                               {{ event_form.eventname() }}
+                <!-- USER IS OWNER -->
+                {% if current_user.id == event_form.creatorid %}
+
+                    <!-- EVENT INFO -->
+                    <form action="/edit_event" method="post" class="form-horizontal">
+                       {{ event_form.hidden_tag() }}
+                       <fieldset>
+
+                           <!-- EVENT NAME -->
+                           <div class="form-group">
+                               <label for="eventname" class="control-label col-xs-6">
+                                   Event name
+                               </label>
+                               <div class="col-xs-6">
+                                   {{ event_form.eventname() }}
+                               </div>
                            </div>
-                       </div>
-                       <div class="form-group">
-                           <label for="eventdate" class="control-label col-xs-6">
-                               Start time
-                           </label>
-                           <div class="col-xs-6">
-                               {{ event_form.starttime() }}
+
+                           <!-- EVENT DATE -->
+                           <div class="form-group">
+                               <label for="eventdate" class="control-label col-xs-6">
+                                   Start time
+                               </label>
+                               <div class="col-xs-6">
+                                   {{ event_form.starttime() }}
+                               </div>
                            </div>
-                       </div>
-                       <div class="form-group">
-                           <label for="eventdate" class="control-label col-xs-6">
-                               Time left
-                           </label>
-                           <div class="col-xs-6">
-                               {{ event_form.timeleft(disabled=True) }}
+
+                           <!-- TIME LEFT -->
+                           <div class="form-group">
+                               <label for="timeleft" class="control-label col-xs-6">
+                                   Time left
+                               </label>
+                               <div class="col-xs-6">
+                                   {{ event_form.timeleft }}
+                               </div>
                            </div>
-                       </div>
-                       <div class="form-group form-group-full">
-                           {{ event_form.eventdescr() }}
-                       </div>
-                       <div class="form-group">
-                           <div class="col-xs-offset-6 col-xs-6">
-                               <button type="submit" class="btn btn-primary">
-                                   Update event
-                               </button>
+
+                           <!-- DESCRIPTION BLOCK -->
+                           <div class="form-group form-group-full">
+                               {{ event_form.eventdescr() }}
                            </div>
-                       </div>
-                   </fieldset>
-                </form>
+
+                           <!-- SUBMIT BUTTON -->
+                           <div class="form-group">
+                               <div class="col-xs-offset-6 col-xs-6">
+                                   <button type="submit" class="btn btn-primary">
+                                       Update event
+                                   </button>
+                               </div>
+                           </div>
+                       </fieldset>
+                    </form>
+
+                <!-- USER IS NOT OWNER -->
+                {% else %}
+
+                    <!-- EVENT INFO -->
+                    <form action="#" method="get" class="form-horizontal">
+                       <fieldset>
+
+                           <!-- EVENT DATE -->
+                           <div class="form-group">
+                               <label for="eventdate" class="control-label col-xs-6">
+                                   Start time
+                               </label>
+                               <div class="col-xs-6">
+                                   {{ event_form.starttime.data }}
+                               </div>
+                           </div>
+
+                           <!-- TIME LEFT -->
+                           <div class="form-group">
+                               <label for="timeleft" class="control-label col-xs-6">
+                                   Time left
+                               </label>
+                               <div class="col-xs-6">
+                                   {{ event_form.timeleft }}
+                               </div>
+                           </div>
+
+                           <!-- DESCRIPTION BLOCK -->
+                           <p>{{ event_form.eventdescr.data }}</p>
+                       </fieldset>
+                    </form>
+
+                {% endif %}
+
             </div>
         </div>
+
+        <!-- SUBSCRIBERS SIDE BAR -->
         <div class="col-md-5">
             <div class="well">
 
@@ -62,6 +115,8 @@
                 {% for subscription in subscriptions %}
                     <div class="panel panel-default panel-subscription">
                         <div class="panel-heading"><b>{{subscription.user.username}}</b></div>
+
+                        <!-- IF USER IS SUBSCRIBER -->
                         {% if subscription.user_id == current_user.id %}
                             {% set subscription_form = make_subscription_form(subscription) %}
                             <div class="panel-body">
@@ -90,7 +145,10 @@
                                </form>
                            </div>
 
+                        <!-- IF USER IS NOT SUBSCRIBER -->
                         {% else %}
+
+                            <!-- IF DESCRIPTION IS NOT EMPTY -->
                             {% if subscription.comment %}
                                 <div class="panel-body">
                                     <div class="form-horizontal">

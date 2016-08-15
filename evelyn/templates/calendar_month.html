@@ -3,58 +3,153 @@
 
 {% block content %}
 
+<!-- BODY -->
 <div class="container-full">
 
-    <div class="container jumbotron">
-        <div class="page-header">
-            <h2 class="shadow-font">
-                Calendar/{{month_name}}
-            </h2>
+    <!-- PAGE HEADER -->
+    <div class="row">
+        <div class="container jumbotron">
+            <div class="page-header">
+                <h2 class="shadow-font">
+                    Calendar/{{month_name}}
+                </h2>
+            </div>
         </div>
     </div>
+    <!-- /PAGE HEADER -->
 
-    <div class="container">
-        <div class="row">
-            {% for day_name,_,_,_,_ in month_and_events[0] %}
-                <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-4 gridbox-padding">
-                    <div class="panel panel-no-margin bg-transparent shadow-font">
-                        {{day_name}}
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+    <!-- PAGE CONTENT -->
+    <div class="row">
 
-        {% for week in month_and_events %}
-            <div class="row">
-                {% for day_name,day,some_events,created,subscribed in week %}
-                    <div class="col-md-7ths col-sm-7ths col-lg-7ths col-xs-4 gridbox-padding">
-                    {% if subscribed %}
-                        <div class="panel no-margin bg-green">
-                    {% elif created %}
-                        <div class="panel no-margin bg-yellow">
-                    {% elif some_events %}
-                        <div class="panel no-margin bg-light-grey">
-                    {% else %}
-                        <div class="panel no-margin bg-dark-grey">
-                    {% endif %}
-                            <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
-                                <div class="row small-padding-no-hmargin">
-                                    <div class="col-xs-6 small-padding-no-hmargin">
-                                        <div class="row small-padding-no-hmargin shadow-font">{{day.strftime('%Y')}}</div>
-                                        <div class="row small-padding-no-hmargin shadow-font">{{day.strftime('%m')}}</div>
-                                    </div>
-                                    <div class="col-xs-6 h2 small-padding-no-hmargin shadow-font">
-                                        {{day.strftime('%d')}}
-                                    </div>
-                                </div>
-                            </a>
+        <!-- CALENDAR -->
+        <div class="col-xs-8">
+
+            <!-- WEEKDAYS -->
+            <div class="row no-margin">
+                {% for day,_ in day_events[0] %}
+                    <div class="col-xs-4 col-sm-4 col-md-7ths col-lg-7ths ">
+                        <div class="panel panel-no-margin bg-transparent shadow-font">
+                            {{day.strftime('%A')}}
                         </div>
                     </div>
                 {% endfor %}
             </div>
-        {% endfor %}
+            <!-- /WEEKDAYS -->
+
+            <!-- CALENDAR DAYS -->
+            {% for week in day_events %}
+                <div class="row no-margin">
+                    {% for day,events in week %}
+                        <div class="col-xs-4 col-sm-4 col-md-7ths col-lg-7ths gridbox-padding">
+
+                            <!-- PER DAY BOX -->
+                            <!-- COLOR OF DAY BOX
+                            {% set (subscribed, created, some_events) = (False, False, False) %}
+                            {% if subscribed %}
+                            <div class="panel no-margin bg-green">
+                            {% elif created %}
+                            <div class="panel no-margin bg-yellow">
+                            {% elif some_events %}
+                            <div class="panel no-margin bg-light-grey">
+                            {% else %}
+                            <div class="panel no-margin bg-dark-grey">
+                            {% endif %}
+                            -->
+
+                            <div class="panel no-margin bg-dark-grey">
+                                <a href="?year={{day.year}}&month={{day.month}}&day={{day.day}}">
+
+                                    <!-- INFO ROW -->
+                                    <div class="row small-padding-no-hmargin shadow-font">
+                                        <div class="col-xs-6 small-padding-no-hmargin">
+                                            <div class="row small-padding-no-hmargin">{{day.strftime('%Y')}}</div>
+                                            <div class="row small-padding-no-hmargin">{{day.strftime('%m')}}</div>
+                                        </div>
+                                        <div class="col-xs-6 h2 small-padding-no-hmargin">
+                                            {{day.strftime('%d')}}
+                                        </div>
+                                    </div>
+
+                                    <!-- EVENT PANELS -->
+                                    {% for event in events %}
+                                        <p>
+                                            {{event.name}}
+                                        </p>
+                                    {% endfor %}
+                                    <!-- /EVENT PANELS -->
+
+                                </a>
+                            </div>
+                            <!-- /PER DAY BOX -->
+
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <!-- /CALENDAR DAYS -->
+        </div>
+        <!-- /CALENDAR -->
+
+        <!-- SIDE BAR -->
+        <div class="col-xs-4">
+
+            <!-- SIDEBAR WRAPPING COMPONENT? -->
+            <div class="well">
+
+                <p><h3 class="shadow-font">Next Events</h3></p>
+
+                <!-- EACHEVENT -->
+                {% for event in next_events %}
+                    <div class="panel panel-default panel-50alpha">
+                        <div class="panel-heading">
+                            <b>{{event.name}}</b>
+                        </div>
+
+                        <!-- EVENT PANEL BODY -->
+                        <div class="panel-body">
+                            {% if event.id in your_subscriptions %}
+                            {% endif %}
+                            <div class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="control-label col-xs-6">
+                                        Date
+                                    </label>
+                                    <div class="col-xs-6">
+                                        {{ event.event_date }}
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="control-label col-xs-6">
+                                        Time left
+                                    </label>
+                                    <div class="col-xs-6">
+                                        {{ event.remaining_time }}
+                                    </div>
+                                </div>
+
+                                <!-- IF DESCRIPTION IS NOT EMPTY -->
+                                {% if event.description %}
+                                    <p>{{ event.description }}</p>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                        <!-- /EVENT PANEL BODY -->
+
+                    </div>
+                {% endfor %}
+                <!-- EACHEVENT -->
+
+            </div>
+            <!-- /SIDEBAR WRAPPING COMPONENT? -->
+
+        </div>
+        <!-- /SIDEBAR -->
 
     </div>
+    <!-- /PAGE CONTENT -->
+
 </div>
+<!-- /BODY -->
 
 {% endblock %}

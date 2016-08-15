@@ -73,6 +73,32 @@ class User(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# returns the timedelta as a string (currently english)
+# if it is less than a minute, returns "now"
+# if the timedelta is negative, returns "already passed"
+def timedelta_to_string(rem):
+    def with_word(num, singular, multiple):
+        if num < 0:
+            return ''
+        elif num == 1:
+            return str(num) + ' ' + singular + ' '
+        else:
+            return str(num) + ' ' + multiple + ' '
+
+    if rem.seconds < 60:
+        return 'now'
+    if rem.days < 0:
+        return 'already passed'
+
+    (minutes, _) = divmod(rem.seconds, 60)
+    (hours, minutes) = divmod(minutes, 60)
+
+    s = with_word(rem.days, 'day', 'days')
+    s += with_word(hours, 'hour', 'hours')
+    s += with_word(minutes, 'minute', 'minutes')
+
+    return s.strip()
+
 # An event (aka calendar entry)
 class Event(db.Model):
     __tablename__ = 'event'
@@ -97,6 +123,11 @@ class Event(db.Model):
 
     def __repr__(self):
         return '<Event {}: {}>'.format(self.id, self.name, self.event_date)
+
+    @property
+    def remaining_time(self):
+        now = datetime.now()
+        return timedelta_to_string(self.event_date - now)
 
 class Commitment(enum.Enum):
     yes = 'yes'

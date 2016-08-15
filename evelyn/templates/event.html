@@ -7,7 +7,11 @@
     <div class="row">
 
         <!-- EVENT INFO BLOCK -->
+        {% if is_subscribed %}
         <div class="col-md-7">
+        {% else %}
+        <div class="col-md-12">
+        {% endif %}
             <div class="well">
                 <div class="page-header">
                     <h2 class="shadow-font">
@@ -68,9 +72,9 @@
                            </div>
                        </fieldset>
                     </form>
+                    <!-- /EVENT INFO -->
 
-                <!-- USER IS NOT OWNER -->
-                {% else %}
+                {% else %} <!-- USER IS NOT OWNER -->
 
                     <!-- EVENT INFO -->
                     <form action="#" method="get" class="form-horizontal">
@@ -100,26 +104,33 @@
                            <p>{{ event_form.eventdescr.data }}</p>
                        </fieldset>
                     </form>
+                    <!-- /EVENT INFO -->
 
-                {% endif %}
+                {% endif %} <!-- WHETHER USER IS OWNER -->
 
             </div>
         </div>
 
         <!-- SUBSCRIBERS SIDE BAR -->
+        {% if is_subscribed %}
         <div class="col-md-5">
             <div class="well">
 
                 <p><h3 class="shadow-font">Subscribers</h3></p>
 
+                <!-- FOREACH SUBSCRIPTION -->
                 {% for subscription in subscriptions %}
-                    <div class="panel panel-default panel-subscription">
-                        <div class="panel-heading"><b>{{subscription.user.username}}</b></div>
+                    <div class="panel panel-default panel-50alpha">
+                        <div class="panel-heading">
+                            <b>{{subscription.user.username}}</b>
+                        </div>
 
-                        <!-- IF USER IS SUBSCRIBER -->
-                        {% if subscription.user_id == current_user.id %}
-                            {% set subscription_form = make_subscription_form(subscription) %}
-                            <div class="panel-body">
+                        <!-- PANEL BODY -->
+                        <div class="panel-body">
+
+                            {% if subscription.user_id == current_user.id %} <!-- IF USER IS SUBSCRIBER -->
+                            
+                                {% set subscription_form = make_subscription_form(subscription) %}
                                 <form action="/edit_subscription" method="post" class="form-horizontal">
                                    {{ subscription_form.hidden_tag() }}
                                    <fieldset>
@@ -143,33 +154,38 @@
                                        </div>
                                    </fieldset>
                                </form>
-                           </div>
 
-                        <!-- IF USER IS NOT SUBSCRIBER -->
-                        {% else %}
+                            {% else %} <!-- IF USER IS NOT SUBSCRIBER -->
 
-                            <!-- IF DESCRIPTION IS NOT EMPTY -->
-                            {% if subscription.comment %}
-                                <div class="panel-body">
-                                    <div class="form-horizontal">
-                                        <div class="form-group">
-                                            <label class="control-label col-xs-6">
-                                                Commitment
-                                            </label>
-                                            <div class="col-xs-6">
-                                                {{ subscription.commitment }}
-                                            </div>
+                                <div class="form-horizontal">
+                                    <div class="form-group">
+                                        <label class="control-label col-xs-6">
+                                            Commitment
+                                        </label>
+                                        <div class="col-xs-6">
+                                            {{ subscription.commitment }}
                                         </div>
-                                        <p>{{ subscription.comment }}</p>
                                     </div>
+
+                                    <!-- IF DESCRIPTION IS NOT EMPTY -->
+                                    {% if subscription.comment %}
+                                        <p>{{ subscription.comment }}</p>
+                                    {% endif %}
                                 </div>
                             {% endif %}
-                        {% endif %}
+
+                        </div>
+                        <!-- /PANEL BODY -->
+
                     </div>
                 {% endfor %}
+                <!-- /FOREACH SUBSCRIPTION -->
 
             </div>
         </div>
+        {% endif %}
+        <!-- /SUBSCRIBERS SIDE BAR -->
+
     </div>
 </div>
 

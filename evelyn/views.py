@@ -20,32 +20,6 @@ from .forms import *
 
 print('Initializing views')
 
-# returns the timedelta as a string (currently english)
-# if it is less than a minute, returns "now"
-# if the timedelta is negative, returns "already passed"
-def timedelta_to_string(rem):
-    def with_word(num, singular, multiple):
-        if num < 0:
-            return ''
-        elif num == 1:
-            return str(num) + ' ' + singular + ' '
-        else:
-            return str(num) + ' ' + multiple + ' '
-
-    if rem.seconds < 60:
-        return 'now'
-    if rem.days < 0:
-        return 'already passed'
-
-    (minutes, _) = divmod(rem.seconds, 60)
-    (hours, minutes) = divmod(minutes, 60)
-
-    s = with_word(rem.days, 'day', 'days')
-    s += with_word(hours, 'hour', 'hours')
-    s += with_word(minutes, 'minute', 'minutes')
-
-    return s.strip()
-
 # fix_month_year :: Month -> Year -> (Month, Year)
 def fix_month_year(m, y):
     while m > 12:
@@ -81,6 +55,17 @@ def logout_required(f):
             return f(*args, **kwargs)
         return redirect(url_for('calendar_route'))
     return decorated_function
+
+def parse_date_from_args(args):
+    today = date.today()
+
+    try:
+        s_year = int(request.args.get('year') or today.year)
+        s_month = int(request.args.get('month') or today.month)
+        s_day = int(request.args.get('day') or today.day)
+        return date(s_year, s_month, s_day)
+    except:
+        return today
 
 ################################################################################
 # / redirects to calendar
@@ -152,52 +137,78 @@ def register_route():
     return render_template('register.html', title='Register', form=form)
 
 ################################################################################
-# get_month_and_events :: [Week [Day Name Date [Event]]]
-# get_month_and_events :: [Week [Day Name Date (Bool, Bool, Bool))]]
-def get_month_and_events(year, month):
-    cal = Calendar(0) # default replace by user db?
+# get_month_events :: Year -> Month -> [[Day]]
+# type Day = (Date, [Event])
+def get_month_events(year, month):
+    # Get the day-dates of the current month
+    cal = Calendar(0) # default replace by user db? (starting day)
     the_month = cal.monthdatescalendar(year, month)
 
+    # First day of first week
     begin = the_month[0][0]
+    # Last day of last week
     end = the_month[-1][-1]
     events = Event.query.filter(
         Event.event_date > begin.strftime('%Y-%m-%d'),
         Event.event_date < end.strftime('%Y-%m-%d')) \
         .options(lazyload('creator')).all()
 
-    your_subscriptions = []
-    if not current_user.is_anonymous:
-        your_subscriptions = db.session.query(Subscription.event_id) \
-            .filter(Subscription.user_id == current_user.id).all()
-        your_subscriptions = [x for (x,) in your_subscriptions]
-
+    # Load the days for the calendar
     def per_day(day):
-        some_events = False
-        created = False
-        subscribed = False
-
-        datetime_day = datetime.combine(day, time())
-        next_day = datetime_day + timedelta(days = 1)
-
+        # Get the interval bounds of that day
+        day_start = datetime.combine(day, time())
+        day_end = day_start + timedelta(days = 1)
+        # Run through all events
+        day_events = []
         for e in events:
-            if e.event_date >= datetime_day and e.event_date < next_day:
-                some_events = True
-                if not current_user.is_anonymous:
-                    created |= e.creator_id == current_user.id
-                    subscribed |= e.id in your_subscriptions
-
-        return (day.strftime('%A'), day, some_events, created, subscribed)
-
+            if e.event_date >= day_start and e.event_date < day_end:
+                day_events.append(e)
+        return (day, day_events)
     def per_week(week):
         return [per_day(d) for d in week]
-
     def per_month(month):
         return [per_week(w) for w in month]
 
     return per_month(the_month)
 
-# get_day_and_events :: [Event ID Name]
-def get_day_and_events(year, month, day):
+# Load the event ids of all your subscribed events.
+# Anon users are not subscribed to anything.
+def get_subscribed_event_ids():
+    if not current_user.is_anonymous:
+        your_subscriptions = db.session.query(Subscription.event_id) \
+            .filter(Subscription.user_id == current_user.id).all()
+        return [x for (x,) in your_subscriptions]
+
+    return []
+
+# Returns a list of the next #limit events.
+# If only_yours is True, only your events are listed.
+# If start_date is None, today is chosen.
+# If end_date is set, only events up to that date are queried.
+def get_next_events(limit, start_date = None, end_date = None, only_yours = True):
+    # Load the events for the event sidebar
+    start_date = start_date or datetime.today()
+
+    query = db.session.query(Event)
+    if only_yours and not current_user.is_anonymous:
+        query = query.join(Subscription) \
+            .filter(Subscription.user_id == current_user.id)
+
+    query = query.filter(Event.event_date > start_date)
+    if end_date:
+        query = query.filter(Event.event_date < end_date)
+
+    query = query \
+        .options(lazyload('creator')) \
+        .order_by(Event.event_date)
+
+    if limit:
+        query = query.limit(limit)
+
+    return query.all()
+
+# get_day_events :: [Event]
+def get_day_events(year, month, day):
     today = date(year,month,day)
     tomorrow = today + timedelta(days=1)
     events = Event.query.filter(
@@ -206,60 +217,62 @@ def get_day_and_events(year, month, day):
     return events
 
 ################################################################################
-# displays the calendar.
-# If year and month are submitted, displays a month views
-# If the day is also submitted displays a day-view
-# POST requests "subscribe" and "unsubscribe"  perform the named actions
-# and redirect back to the calendar
-@current_app.route('/calendar', methods=['GET','POST'])
-def calendar_route():
-    if request.method == 'POST':
-        unsubscribe = request.form.get('unsubscribe')
-        if unsubscribe is not None:
-            optionally_redundant_subscriptions = Subscription.query\
-                .filter(Subscription.event_id == int(unsubscribe))\
-                .filter(Subscription.user_id == current_user.id)
-
-            optionally_redundant_subscriptions.delete()
+# Route to subscribe for events. Requires the 'subscribe'-field.
+# If the current user is not already subscriber for that event, a subscription
+# with 'Yes' and an empty comment is added.
+# This route redirects to the submitted 'next' address, or back to the calendar-view.
+@current_app.route('/subscribe', methods=['POST'])
+@login_required
+def subscribe_route():
+    subscribe = request.form.get('subscribe')
+    if subscribe is not None:
+        # Integrity checks
+        optionally_redundant_subscriptions = Subscription.query\
+            .filter(Subscription.event_id == int(subscribe))\
+            .filter(Subscription.user_id == current_user.id).all()
+        if not optionally_redundant_subscriptions:
+            s = Subscription(current_user.id, int(subscribe))
+            db.session.add(s)
             db.session.commit()
-            flash('Unsubscribed from event')
+            flash('Subscribed to event')
+        else:
+            flash('Already subscribed to that event')
 
-        subscribe = request.form.get('subscribe')
-        if subscribe is not None:
-            # Integrity checks
-            optionally_redundant_subscriptions = Subscription.query\
-                .filter(Subscription.event_id == int(subscribe))\
-                .filter(Subscription.user_id == current_user.id).all()
-            if not optionally_redundant_subscriptions:
-                s = Subscription(current_user.id, int(subscribe))
-                db.session.add(s)
-                db.session.commit()
-                flash('Subscribed to event')
-            else:
-                flash('Already subscribed to that event')
+    next = request.form.get('next') or url_for('calendar_route')
+    return redirect(next)
 
-        next = request.form.get('next') or url_for('calendar_route')
-        return redirect(next)
-
+################################################################################
+# displays the calendar.
+# If year and month are submitted, displays a month view
+# If the day is also submitted displays a day-view
+@current_app.route('/calendar', methods=['GET'])
+def calendar_route():
     now = date.today()
     year = int(request.args.get('year') or now.year)
     month = int(request.args.get('month') or now.month)
     day = request.args.get('day')
 
+    # Get the current (localized) month name.
     at_month = date(year, month, 1)
     month_name = at_month.strftime("%B")
 
+    # Month view
     if day is None:
-        month_and_events = get_month_and_events(year, month)
+        day_events = get_month_events(year, month)
+        your_subscriptions = get_subscribed_event_ids()
+        next_events = get_next_events(limit = 5)
 
         return render_template(
             'calendar_month.html',
             title='Calendar',
-            month_name=month_name,
-            month_and_events=month_and_events)
+            day_events = day_events,
+            your_subscriptions = your_subscriptions,
+            next_events = next_events,
+            month_name=month_name)
 
+    # Day view
     day = int(day)
-    day_and_events = get_day_and_events(year, month, day)
+    day_and_events = get_day_events(year, month, day)
     #day_and_events = [(e,e.creator) for e in day_and_events]
     return render_template(
         'calendar_day.html',
@@ -300,13 +313,20 @@ def event_route():
     event_form.eventname.data = event.name
     event_form.starttime.data = event.event_date
     event_form.eventdescr.data = event.description
-    now = datetime.now()
-    event_form.timeleft = timedelta_to_string(event.event_date - now)
+    event_form.timeleft = event.remaining_time
     event_form.creatorid = event.creator_id
+
+    cuser_is_subscribed = False
+    if not current_user.is_anonymous:
+        current_user_suscribed = Subscription.query \
+            .filter(Subscription.event_id == event.id) \
+            .filter(Subscription.user_id == current_user.id).first()
+        cuser_is_subscribed = not current_user_suscribed is None
 
     return render_template(
         'event.html',
         title = 'Event',
+        is_subscribed = cuser_is_subscribed,
         subscriptions = event.subscriptions,
         make_subscription_form = make_subscription_form,
         event_form = event_form)
@@ -349,37 +369,24 @@ def edit_subscription_route():
     return redirect(url_for('event_route', id=subscription.event_id))
 
 ################################################################################
-@current_app.route('/subscriptions', methods=['GET', 'POST'])
+@current_app.route('/subscriptions', methods=['GET'])
 @login_required
 def subscriptions_route():
-    if request.method == 'POST':
-        unsubscribe = request.form.get('unsubscribe')
-        if unsubscribe is not None:
-            optionally_redundant_subscriptions = Subscription.query\
-                .filter(Subscription.event_id == int(unsubscribe))\
-                .filter(Subscription.user_id == current_user.id)
-
-            optionally_redundant_subscriptions.delete()
-            db.session.commit()
-            flash('Unsubscribed from event')
-
-        return redirect(url_for('subscriptions_route'))
-
     # events = current_user.subscriptions
     events = db.session.query(Event).join(Subscription) \
         .filter(Subscription.user_id==current_user.id) \
         .order_by(Event.event_date).all()
-
-    now = datetime.now()
-    for e in events:
-        e.remaining_time = timedelta_to_string(e.event_date - now)
 
     return render_template(
         'subscriptions.html',
         title='Your subscriptions',
         events=events)
 
+################################################################################
+# The get request may contain a predefined year, month, day.
+# If these parameters are omitted, the current ones are chosen.
 @current_app.route('/add', methods=['GET', 'POST'])
+@login_required
 def add_route():
     form = EventForm()
     if form.validate_on_submit():
@@ -391,17 +398,25 @@ def add_route():
         db.session.add(e)
         db.session.commit()
 
-        return redirect(url_for('calendar_route'))
+        s = Subscription(current_user.id, e.id)
+        db.session.add(s)
+        db.session.commit()
 
+        return redirect(url_for('event_route', id=e.id))
+
+    form.starttime.data = parse_date_from_args(request.args)
     return render_template(
         'add_event.html',
         form=form,
         title='Add Event')
 
+################################################################################
 @current_app.route('/<other>', methods=['GET', 'POST'])
 def not_found(other = None):
     flash('Invalid path: {}'.format(other))
     return redirect(url_for('calendar_route'))
+
+################################################################################
 
 
 """

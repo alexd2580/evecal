@@ -83,27 +83,27 @@ input, select, textarea {
 }
 
 .col-xs-7ths {
-    width: 13.75%;
+    width: 14.28%;
     float: left;
 }
 
 @media (min-width: 768px) {
     .col-sm-7ths {
-        width: 13.75%;
+        width: 14.28%;
         float: left;
     }
 }
 
 @media (min-width: 992px) {
     .col-md-7ths {
-        width: 13.75%;
+        width: 14.28%;
         float: left;
     }
 }
 
 @media (min-width: 1200px) {
     .col-lg-7ths {
-        width: 13.75%;
+        width: 14.28%;
         float: left;
     }
 }
@@ -165,7 +165,7 @@ input, select, textarea {
     text-shadow: -1px 0px 1px black, 0px 1px 1px black, 1px 0px 1px black, 0px -1px 1px black;
 }
 
-.panel-subscription {
+.panel-50alpha {
     background: rgba(0, 0, 0, 0.5);
 }
 

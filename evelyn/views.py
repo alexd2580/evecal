@@ -40,6 +40,7 @@ def get_prev_month(this_month):
     (m, y) = fix_month_year(this_month.month - 1, this_month.year)
     return date(y, m, 1)
 
+#TODO fix validity checker
 valid_paths = ['/', '/login', '/logout', '/register']
 
 def next_is_valid(next):
@@ -91,7 +92,7 @@ def login_route():
             return render_template('login.html', title='Sign In', form=form)
 
         login_user(user)
-        flash('Logged in successfully as {}'.format(username))
+        flash('Logged in as {}'.format(username))
 
         next = request.args.get('next')
         if next_is_valid(next):
@@ -107,6 +108,7 @@ def login_route():
 @login_required
 def logout_route():
     logout_user()
+    flash('Logged out')
     return redirect(url_for('calendar_route'))
 
 ################################################################################
@@ -352,6 +354,7 @@ def edit_event_route():
             event.event_date = datetime.combine(date, time)
             event.description = request.form['description']
             db.session.commit()
+            flash('Event updated')
         else:
             flash('You cannot edit this event')
 
@@ -370,6 +373,7 @@ def edit_subscription_route():
         subscription.comment = request.form.get('comment')
         subscription.commitment = request.form.get('commitment')
         db.session.commit()
+        flash('Subscription updated')
 
     return redirect(url_for('event_route', id=subscription.event_id))
 

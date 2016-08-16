@@ -15,7 +15,7 @@
             <div class="well">
                 <div class="page-header">
                     <h2 class="shadow-font">
-                        Event/{{event_form.eventname.data}}
+                        Event/{{event_form.name.data}}
                     </h2>
                 </div>
 
@@ -29,21 +29,31 @@
 
                            <!-- EVENT NAME -->
                            <div class="form-group">
-                               <label for="eventname" class="control-label col-xs-6">
-                                   Event name
+                               <label for="name" class="control-label col-xs-6">
+                                   Name
                                </label>
                                <div class="col-xs-6">
-                                   {{ event_form.eventname() }}
+                                   {{ event_form.name() }}
                                </div>
                            </div>
 
                            <!-- EVENT DATE -->
                            <div class="form-group">
-                               <label for="eventdate" class="control-label col-xs-6">
-                                   Start time
+                               <label for="date" class="control-label col-xs-6">
+                                   Date
                                </label>
                                <div class="col-xs-6">
-                                   {{ event_form.starttime() }}
+                                   {{ event_form.date() }}
+                               </div>
+                           </div>
+
+                           <!-- EVENT TIME -->
+                           <div class="form-group">
+                               <label for="time" class="control-label col-xs-6">
+                                   Time
+                               </label>
+                               <div class="col-xs-6">
+                                   {{ event_form.time() }}
                                </div>
                            </div>
 
@@ -59,7 +69,7 @@
 
                            <!-- DESCRIPTION BLOCK -->
                            <div class="form-group form-group-full">
-                               {{ event_form.eventdescr() }}
+                               {{ event_form.description() }}
                            </div>
 
                            <!-- SUBMIT BUTTON -->
@@ -129,7 +139,7 @@
                         <div class="panel-body">
 
                             {% if subscription.user_id == current_user.id %} <!-- IF USER IS SUBSCRIBER -->
-                            
+
                                 {% set subscription_form = make_subscription_form(subscription) %}
                                 <form action="/edit_subscription" method="post" class="form-horizontal">
                                    {{ subscription_form.hidden_tag() }}

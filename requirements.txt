@@ -4,3 +4,4 @@ flask_login
 Flask-WTF
 Flask-SQLAlchemy
 flask_admin
+wtforms_components

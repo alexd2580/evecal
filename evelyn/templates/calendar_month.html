@@ -6,7 +6,9 @@
 <!-- BODY -->
 <div class="container-full">
 
+
     <!-- PAGE HEADER -->
+    <!--
     <div class="row">
         <div class="container jumbotron">
             <div class="page-header">
@@ -16,6 +18,7 @@
             </div>
         </div>
     </div>
+    -->
     <!-- /PAGE HEADER -->
 
     <!-- PAGE CONTENT -->
@@ -71,12 +74,15 @@
                                     </div>
 
                                     <!-- EVENT PANELS -->
-                                    {% for event in events %}
+                                    {% for event in events[:3] %}
                                         <p>
                                             {{event.name}}
                                         </p>
                                     {% endfor %}
                                     <!-- /EVENT PANELS -->
+                                    {% for i in range(events|count, 3) %}
+                                        <p>&nbsp;</p>
+                                    {% endfor %}
 
                                 </a>
                             </div>

@@ -309,10 +309,13 @@ def event_route():
         return subscr_form
 
     event_form = EditForm()
-    event_form.eventid.data = event.id
-    event_form.eventname.data = event.name
-    event_form.starttime.data = event.event_date
-    event_form.eventdescr.data = event.description
+    event_form.id.data = event.id
+    event_form.name.data = event.name
+    event_form.date.data = event.event_date.date()
+    event_form.time.data = event.event_date.time()
+    event_form.description.data = event.description
+
+    # Additional fields
     event_form.timeleft = event.remaining_time
     event_form.creatorid = event.creator_id
 
@@ -336,16 +339,18 @@ def event_route():
 # Redirects to /event?id={{request.form['eventid']}}
 @current_app.route('/edit_event', methods=['POST'])
 def edit_event_route():
-    id = request.form['eventid']
+    id = request.form['id']
 
     event_form = EditForm()
     if event_form.validate_on_submit():
         event = Event.query.filter(Event.id == int(id)).one()
 
         if event.creator_id == current_user.id:
-            event.name = request.form['eventname']
-            event.event_date = event_form.starttime.data # ?
-            event.description = request.form['eventdescr']
+            event.name = request.form['name']
+            date = event_form.date.data
+            time = event_form.time.data
+            event.event_date = datetime.combine(date, time)
+            event.description = request.form['description']
             db.session.commit()
         else:
             flash('You cannot edit this event')
@@ -390,9 +395,11 @@ def subscriptions_route():
 def add_route():
     form = EventForm()
     if form.validate_on_submit():
-        event_name = request.form['eventname']
-        event_date = form.starttime.data
-        event_descr = request.form['eventdescr']
+        event_name = request.form['name']
+        date = form.date.data
+        time = form.time.data
+        event_date = datetime.combine(date, time)
+        event_descr = request.form['description']
         e = Event(event_date, event_name, event_descr, current_user.id)
 
         db.session.add(e)
@@ -404,7 +411,8 @@ def add_route():
 
         return redirect(url_for('event_route', id=e.id))
 
-    form.starttime.data = parse_date_from_args(request.args)
+    form.date.data = parse_date_from_args(request.args)
+    #form.time.data = parse_date_from_args(request.args)
     return render_template(
         'add_event.html',
         form=form,
